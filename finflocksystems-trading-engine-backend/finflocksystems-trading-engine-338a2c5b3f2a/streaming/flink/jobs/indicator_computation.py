@@ -159,7 +159,7 @@ def build(env):
     # deliberately not restored (ensure_flink_jobs passes --allowNonRestoredState).
     values=bars.union(seeds).key_by(_key).connect(registry).process(
         RegistryIndicators(max_bars,ttl_seconds),output_type=Types.STRING(),
-    ).uid("registry-indicators-v3")
+    ).name("indicator-computation-state").uid("registry-indicators-v3")
     sink(values,"market.indicators.v1","indicator-sink-v2")
 
 

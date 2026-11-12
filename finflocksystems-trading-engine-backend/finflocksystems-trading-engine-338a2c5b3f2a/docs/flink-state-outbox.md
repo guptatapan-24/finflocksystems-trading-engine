@@ -102,3 +102,10 @@ TaskManager does not need these variables.
 * Durable checkpoints (`state.backend.type: rocksdb`, `state.checkpoints.dir`
   on a shared volume) are still recommended. They are no longer needed for
   correctness.
+
+## Demonstration
+
+`demo/flink_state/` runs the real `market-pipeline-v1` job on Kafka and Flink twice:
+once with the pre-fix operators and once with the fix, under the same load and
+the same simulated incident (activation events aged out of Kafka, then a job
+restart). It needs about 5 GB for Docker. See `demo/flink_state/README.md`.

@@ -1,0 +1,145 @@
+# Flink state demo: reproduce the unbounded / non-durable Flink state problem on
+# the pre-fix operators and show the fix (bounded state + outbox rehydration).
+#
+# Only what the demo needs: PostgreSQL (outbox, MarketBar, requirements), Kafka,
+# one Flink JobManager, one single-slot TaskManager, and a runner built from the
+# backend image (it submits the real PyFlink job, runs the outbox publisher and
+# the market consumer, and simulates the market). No Redis, Celery, IBKR
+# gateway or frontend. Peak memory is about 5 GB; see demo/flink_state/README.md.
+#
+#   docker compose -f docker-compose.flink-demo.yml build demo
+#   docker compose -f docker-compose.flink-demo.yml run --rm demo baseline
+#   docker compose -f docker-compose.flink-demo.yml down
+#   docker compose -f docker-compose.flink-demo.yml run --rm demo fixed
+#   docker compose -f docker-compose.flink-demo.yml down
+#   docker compose -f docker-compose.flink-demo.yml run --rm --no-deps demo compare
+#
+# It is a separate Compose project with no named volumes: `down` leaves nothing
+# behind and never touches the main stack.
+
+name: finflock-flink-demo
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: flink_demo
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=40"]
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo -d flink_demo"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  kafka:
+    image: apache/kafka:3.9.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_NUM_PARTITIONS: 1
+      CLUSTER_ID: RmxpbmtTdGF0ZURlbW8wMQ
+      KAFKA_HEAP_OPTS: "-Xmx384m -Xms128m"
+      # The demo shortens strategy.inputs.v1 retention to stand in for "the
+      # strategy was activated more than 7 days ago"; check retention often.
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 5000
+      KAFKA_LOG_SEGMENT_DELETE_DELAY_MS: 1000
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+  flink-jobmanager:
+    image: flink:1.20.1-scala_2.12-java17
+    platform: linux/amd64
+    command: jobmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        parallelism.default: 1
+        jobmanager.memory.process.size: 768m
+    ports:
+      - "28081:8081"   # Flink UI for the demo: http://localhost:28081
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/overview >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  flink-taskmanager:
+    image: flink:1.20.1-scala_2.12-java17
+    platform: linux/amd64
+    command: taskmanager
+    environment:
+      # Same state backend as production (default HashMap: state on the JVM
+      # heap; no state.checkpoints.dir, so checkpoints are not addressable
+      # after a resubmission). One slot: the single market-pipeline-v1 job.
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 1
+        taskmanager.memory.process.size: 2048m
+        taskmanager.memory.jvm-metaspace.size: 256m
+        parallelism.default: 1
+    mem_limit: 2560m   # 2 GB Flink process + the PyFlink (Beam) Python worker
+    depends_on:
+      flink-jobmanager:
+        condition: service_healthy
+
+  demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: finflock-flink-demo-runner:latest
+    entrypoint: ["python", "-u", "demo/flink_state/run_demo.py"]
+    command: ["--help"]
+    working_dir: /app
+    # The working tree is mounted, so code changes need no image rebuild. The
+    # image only supplies the Flink client, PyFlink and the worker runtime zip.
+    volumes:
+      - ./:/app
+    environment:
+      DATABASE_URL: postgres://demo:demo@postgres:5432/flink_demo
+      DJANGO_SECRET_KEY: flink-state-demo
+      BROKER_SESSION_ENCRYPTION_KEY: flink-state-demo-only
+      CLEANUP_DATABASE_ON_START: "false"
+      INTELLIGENCE_ENABLED: "false"
+      KAFKA_ENABLED: "true"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC_PARTITIONS: "1"
+      FLINK_REST_URL: http://flink-jobmanager:8081
+      EXECUTION_REQUIRED_FLINK_JOBS: market-pipeline-v1
+      # Read by the Flink job at submission (both variants).
+      FLINK_CHECKPOINT_INTERVAL_MS: "10000"
+      # The demo replays a trading session about 50x faster than real time
+      # (one 1-minute bar every ~1.2 s). The fixed operators' time-based limits
+      # are scaled down by the same order so their plateau is visible within
+      # minutes; production defaults are 900 s / 7 days / 1000 bars.
+      BAR_BUCKET_RETENTION_SECONDS: "20"
+      BAR_VERSION_LEDGER_TTL_SECONDS: "120"
+      INDICATOR_HISTORY_MAX_BARS: "200"
+      FLINK_REHYDRATION_SEED_BARS: "200"
+    mem_limit: 1536m
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      flink-jobmanager:
+        condition: service_healthy
+      flink-taskmanager:
+        condition: service_started

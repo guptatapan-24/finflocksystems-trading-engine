@@ -246,7 +246,7 @@ def build(env):
     # deliberately not restored (ensure_flink_jobs passes --allowNonRestoredState).
     bars=ticks.connect(registry).process(
         RegistryBars(retention_seconds,ledger_ttl_seconds),output_type=Types.STRING(),
-    ).uid("registry-bars-v3")
+    ).name("bar-aggregation-state").uid("registry-bars-v3")
     sink(bars,"market.bars.v1","bar-sink-v2")
     sink(bars.get_side_output(LATE_TICKS),"dead-letter.v1","bar-late-tick-dlq-sink-v1")
 
