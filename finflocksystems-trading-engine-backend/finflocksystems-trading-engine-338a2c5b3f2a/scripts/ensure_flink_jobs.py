@@ -634,7 +634,10 @@ def submit_python_job(
         str(config.kafka_connector_jar),
     ]
     if restore_path:
-        command.extend(["-s", restore_path])
+        # --allowNonRestoredState: operators whose state layout was replaced
+        # (registry-bars-v3, registry-indicators-v3) intentionally drop their
+        # old unbounded state; it is rebuilt from PostgreSQL via the outbox.
+        command.extend(["-s", restore_path, "--allowNonRestoredState"])
     try:
         result = run(
             command,

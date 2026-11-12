@@ -447,6 +447,7 @@ def test_cli_submission_ships_dependencies_and_checkpoint_restore_path(tmp_path)
         str(config.kafka_connector_jar),
         "-s",
         restore_path,
+        "--allowNonRestoredState",
     ]
     assert captured["kwargs"]["timeout"] == 10
     assert captured["kwargs"]["capture_output"] is True

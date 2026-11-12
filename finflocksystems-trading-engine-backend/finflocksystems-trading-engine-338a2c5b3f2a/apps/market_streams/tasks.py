@@ -67,3 +67,17 @@ def check_warmup_timeouts():
     # closed markets and sparse intervals), not a timeout failure. Provider or
     # subscription failures are recorded by subscription lifecycle handling.
     return blocked
+
+
+@shared_task
+def rehydrate_flink_state():
+    """Re-feed Flink from PostgreSQL (via the outbox) when a job starts without state."""
+    from .rehydration import rehydrate_flink_state_if_needed
+    return rehydrate_flink_state_if_needed()
+
+
+@shared_task
+def publish_strategy_inputs_snapshot():
+    """Re-queue the authoritative requirement registry onto strategy.inputs.v1."""
+    from .rehydration import publish_strategy_inputs_snapshot as publish
+    return publish()

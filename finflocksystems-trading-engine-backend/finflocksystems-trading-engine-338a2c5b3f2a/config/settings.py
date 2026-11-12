@@ -305,6 +305,16 @@ PENDING_INTENT_MAX_AGE_SECONDS = int(
 BROKER_COMMAND_MAX_AGE_SECONDS = int(
     os.getenv("BROKER_COMMAND_MAX_AGE_SECONDS", "60")
 )
+# Flink keeps bounded working state; PostgreSQL is the system of record and the
+# backend re-feeds Flink through the transactional outbox
+# (apps/market_streams/rehydration.py, docs/flink-state-outbox.md).
+FLINK_REHYDRATION_ENABLED = os.getenv("FLINK_REHYDRATION_ENABLED", "true").lower() == "true"
+FLINK_REHYDRATION_CHECK_INTERVAL_SECONDS = float(os.getenv("FLINK_REHYDRATION_CHECK_INTERVAL_SECONDS", "30"))
+# Bars re-published per (instrument, timeframe). Keep <= INDICATOR_HISTORY_MAX_BARS (Flink side).
+FLINK_REHYDRATION_SEED_BARS = int(os.getenv("FLINK_REHYDRATION_SEED_BARS", "500"))
+FLINK_REHYDRATION_SEED_CHUNK_BARS = int(os.getenv("FLINK_REHYDRATION_SEED_CHUNK_BARS", "100"))
+# Re-publishing the registry keeps strategy.inputs.v1 recoverable regardless of Kafka retention.
+STRATEGY_INPUTS_SNAPSHOT_INTERVAL_SECONDS = float(os.getenv("STRATEGY_INPUTS_SNAPSHOT_INTERVAL_SECONDS", "900"))
 CELERY_BEAT_SCHEDULE = {
     "reconcile": {"task": "apps.reconciliation.tasks.run_scheduled_reconciliation", "schedule": 60.0},
     "sync-broker": {"task": "apps.broker_gateway.tasks.sync_broker_events", "schedule": BROKER_SYNC_INTERVAL_SECONDS},
@@ -315,6 +325,8 @@ CELERY_BEAT_SCHEDULE = {
     "strategy-evaluation": {"task": "apps.strategies.tasks.execute_strategy_evaluation_jobs", "schedule": STRATEGY_EVALUATION_INTERVAL_SECONDS},
     "recover-strategy-evaluation": {"task": "apps.strategies.tasks.recover_strategy_evaluation_jobs", "schedule": EXECUTION_RECOVERY_INTERVAL_SECONDS},
     "instrument-registry": {"task": "apps.instruments.tasks.publish_instrument_registry_snapshot", "schedule": 60.0},
+    "strategy-inputs-snapshot": {"task": "apps.market_streams.tasks.publish_strategy_inputs_snapshot", "schedule": STRATEGY_INPUTS_SNAPSHOT_INTERVAL_SECONDS},
+    "rehydrate-flink-state": {"task": "apps.market_streams.tasks.rehydrate_flink_state", "schedule": FLINK_REHYDRATION_CHECK_INTERVAL_SECONDS},
     "recover-rebalances": {"task": "apps.rebalancing.tasks.recover_incomplete_rebalances", "schedule": 60.0},
     "coordinate-portfolio-targets": {"task": "apps.rebalancing.tasks.coordinate_portfolio_targets", "schedule": TARGET_COORDINATION_INTERVAL_SECONDS},
     "execute-order-intents": {"task": "apps.execution.tasks.execute_order_intents", "schedule": ORDER_INTENT_INTERVAL_SECONDS},
@@ -401,7 +413,8 @@ EXECUTION_REQUIRED_KAFKA_TOPICS = tuple(
     value.strip()
     for value in os.getenv(
         "EXECUTION_REQUIRED_KAFKA_TOPICS",
-        "market.raw.v1,market.canonical.v1,market.bars.v1,market.indicators.v1,"
+        "market.raw.v1,market.canonical.v1,market.bars.v1,market.bars.seed.v1,"
+        "market.indicators.v1,"
         "market.quality.v1,instrument.registry.v1,strategy.inputs.v1,"
         "strategy.targets.v1,portfolio.rebalance.planned.v1,risk.decisions.v1,"
         "orders.events.v1,executions.events.v1,reconciliation.events.v1,"

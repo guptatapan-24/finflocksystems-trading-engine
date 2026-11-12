@@ -121,6 +121,126 @@ def advance_bar_version(bucket, bar):
     return updated, updated["version"]
 
 
+# ---------------------------------------------------------------------------
+# Bounded Flink state, rebuilt from PostgreSQL through the transactional outbox
+# ---------------------------------------------------------------------------
+#
+# Flink keyed state is a working cache, not the system of record: PostgreSQL
+# owns the requirement registry (StrategyInputRequirement/Binding) and the bar
+# history (MarketBar). The backend re-feeds both through the outbox
+# (apps/market_streams/rehydration.py), so the helpers below can keep Flink
+# state small and still recover after it is lost.
+
+STRATEGY_INPUTS_SNAPSHOT_EVENT_TYPE = "strategy.inputs.snapshot"
+BAR_HISTORY_SEED_EVENT_TYPE = "market.bar.seed"
+REGISTRY_META_PREFIX = "meta:"
+HISTORY_BAR_FIELDS = (
+    "bar_id", "instrument_id", "interval", "version", "window_start", "window_end",
+    "open", "high", "low", "close", "volume", "is_final",
+)
+
+
+def is_registry_meta_key(key):
+    return str(key).startswith(REGISTRY_META_PREFIX)
+
+
+def registry_meta_key(instrument_id, timeframe):
+    return f"{REGISTRY_META_PREFIX}{instrument_id}:{timeframe}"
+
+
+def _registry_item(requirement, instrument_id, timeframe):
+    return {**requirement, "instrument_id": str(instrument_id), "timeframe": timeframe}
+
+
+def plan_registry_update(event, current, input_type):
+    """Return ``(puts, removes)`` for one ``strategy.inputs.v1`` event.
+
+    ``current`` maps broadcast-state keys to decoded items, including the
+    ``meta:<instrument>:<timeframe>`` bookkeeping entries. Incremental
+    ``strategy.inputs.changed`` events keep their historical upsert/remove
+    behaviour. A ``strategy.inputs.snapshot`` published from PostgreSQL
+    *replaces* every requirement of this stage's input type for its
+    (instrument, timeframe), unless an incremental event newer than the
+    snapshot was already applied: a snapshot that was retried late must not
+    undo a newer activation or deactivation.
+    """
+    payload = event.get("payload") or {}
+    instrument_id = str(payload.get("instrument_id"))
+    timeframe = payload.get("timeframe")
+    meta_key = registry_meta_key(instrument_id, timeframe)
+    occurred_at = event.get("occurred_at")
+    last_applied = (current.get(meta_key) or {}).get("occurred_at")
+    wanted = {
+        requirement["identity_hash"]: _registry_item(requirement, instrument_id, timeframe)
+        for requirement in payload.get("requirements", [])
+        if requirement.get("input_type") == input_type
+    }
+    puts, removes = {}, []
+    if event.get("event_type") == STRATEGY_INPUTS_SNAPSHOT_EVENT_TYPE:
+        if last_applied and occurred_at and utc(occurred_at) < utc(last_applied):
+            return {}, []
+        removes = [
+            key for key, item in current.items()
+            if not is_registry_meta_key(key)
+            and str(item.get("instrument_id")) == instrument_id
+            and item.get("timeframe") == timeframe
+            and key not in wanted
+        ]
+    else:
+        removes = list(payload.get("removed_requirement_hashes", []))
+    puts.update(wanted)
+    if occurred_at and (not last_applied or utc(occurred_at) > utc(last_applied)):
+        puts[meta_key] = {"occurred_at": occurred_at}
+    return puts, removes
+
+
+def apply_registry_event(state, event, input_type):
+    """Apply :func:`plan_registry_update` to a broadcast ``MapState`` of JSON strings."""
+    import json
+
+    current = {key: json.loads(value) for key, value in state.items()}
+    puts, removes = plan_registry_update(event, current, input_type)
+    for key in removes:
+        state.remove(key)
+    for key, item in puts.items():
+        state.put(key, json.dumps(item, separators=(",", ":")))
+    return puts, removes
+
+
+def compact_history_bar(bar):
+    """Keep only the fields indicator computation and ordering read."""
+    return {key: bar[key] for key in HISTORY_BAR_FIELDS if key in bar}
+
+
+def history_limit(requirements, default_max_bars):
+    """Bars to retain for one (instrument, timeframe): the configured cap, but
+    never fewer than the longest warm-up a registered requirement declares."""
+    needed = max((int(item.get("warmup_bars") or 0) for item in requirements), default=0) + 1
+    return max(int(default_max_bars), needed)
+
+
+def _history_order(bar):
+    return (utc(bar["window_end"]), int(bar.get("version", 1)))
+
+
+def merge_bar_history(history, incoming, max_bars):
+    """Union two bar lists by ``bar_id`` keeping the highest version.
+
+    Order-independent, so a seed replayed from Kafka before or after live bars
+    yields the same history.
+    """
+    by_id = {}
+    for bar in [*history, *incoming]:
+        if not bar.get("is_final", True):
+            continue
+        compact = compact_history_bar(bar)
+        previous = by_id.get(compact["bar_id"])
+        if previous is None or int(compact.get("version", 1)) >= int(previous.get("version", 1)):
+            by_id[compact["bar_id"]] = compact
+    ordered = sorted(by_id.values(), key=_history_order)
+    return ordered[-int(max_bars):] if int(max_bars) > 0 else ordered
+
+
 def buffer_unknown_registry_event(pending, incoming, expires_at_ms, maximum_events):
     """Return a bounded, source-id deduplicated pending list and any capacity eviction."""
     payload = incoming.get("payload", incoming)

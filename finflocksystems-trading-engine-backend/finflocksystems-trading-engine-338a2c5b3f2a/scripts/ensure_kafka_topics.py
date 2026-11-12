@@ -23,6 +23,7 @@ DEFAULT_TOPICS = (
     "market.raw.v1",
     "market.canonical.v1",
     "market.bars.v1",
+    "market.bars.seed.v1",
     "market.indicators.v1",
     "market.quality.v1",
     "instrument.registry.v1",
