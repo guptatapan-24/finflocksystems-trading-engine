@@ -1,0 +1,16 @@
+server {
+  listen ${PORT};
+  server_name _;
+  server_tokens off;
+  absolute_redirect off;
+  root /usr/share/nginx/html;
+  gzip on;
+  location = /qfsplatform/trading_engine_frontend { return 301 /qfsplatform/trading_engine_frontend/; }
+  location ~ ^(?:/qfsplatform/trading_engine_frontend)?/healthz$ { access_log off; default_type text/plain; return 200 'ok'; }
+  location ~ ^(?:/qfsplatform/trading_engine_frontend)?/runtime-config.js$ {
+    try_files /runtime-config.js =404;
+    add_header Cache-Control "no-store";
+  }
+  location ~ ^/qfsplatform/trading_engine_frontend/(.*)$ { try_files /$1 /index.html; }
+  location / { try_files $uri $uri/ /index.html; }
+}

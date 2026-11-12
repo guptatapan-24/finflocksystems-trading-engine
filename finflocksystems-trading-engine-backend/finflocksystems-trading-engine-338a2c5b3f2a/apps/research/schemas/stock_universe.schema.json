@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "required": ["metadata", "stocks", "universe_rules"],
+  "properties": {
+    "metadata": {"type": "object"}, "universe_rules": {"type": "object"},
+    "stocks": {
+      "type": "array", "minItems": 500, "maxItems": 500,
+      "items": {
+        "type": "object", "required": ["symbol", "security", "asset_class", "currency", "broker_exchange_hint", "gics", "issuer_metadata", "research_eligibility", "risk_timeframe_profile"],
+        "properties": {
+          "symbol": {"type": "string", "minLength": 1}, "security": {"type": "string"},
+          "asset_class": {"const": "STK"}, "currency": {"type": "string"},
+          "gics": {"type": "object", "required": ["sector_code", "industry_group_code", "industry_code", "sub_industry_code"]},
+          "issuer_metadata": {"type": "object", "required": ["cik"]}
+        }
+      }
+    }
+  }
+}

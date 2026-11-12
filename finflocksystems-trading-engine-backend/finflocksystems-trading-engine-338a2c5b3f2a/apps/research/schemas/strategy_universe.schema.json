@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "required": ["metadata", "feature_registry", "strategies"],
+  "properties": {
+    "metadata": {"type": "object"}, "feature_registry": {"type": "object"},
+    "strategies": {
+      "type": "array", "minItems": 97, "maxItems": 97,
+      "items": {
+        "type": "object", "required": ["id", "name", "family", "scope", "production_status", "engine_compatibility", "supported_directions", "supported_bar_frequencies", "required_data", "features", "signal_logic", "parameter_grid"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1}, "name": {"type": "string"},
+          "scope": {"enum": ["single_asset", "cross_sectional", "portfolio", "overlay", "pair_or_basket", "single_asset_or_cross_sectional"]},
+          "supported_bar_frequencies": {"type": "array", "items": {"enum": ["1D", "1H", "15m", "5m", "1m"]}}
+        }
+      }
+    }
+  }
+}

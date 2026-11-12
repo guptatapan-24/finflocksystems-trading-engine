@@ -1,0 +1,227 @@
+name: finflock-options-validation
+# Shared by every service: bounded json-file logs (no unbounded disk growth) and a restart policy.
+x-logging: &default-logging
+  driver: json-file
+  options: {max-size: "20m", max-file: "5"}
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: options_validation
+      POSTGRES_USER: trading
+      POSTGRES_PASSWORD: ${LOCAL_DB_PASSWORD:?Set LOCAL_DB_PASSWORD}
+    volumes: ["options_postgres:/var/lib/postgresql/data"]
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trading -d options_validation"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    # The password is read from the REDIS_PASSWORD env var (never hardcoded here). The same variable is passed to the
+    # backend, which builds its Redis URLs from it. AOF keeps the Celery queue across restarts.
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+    volumes: ["options_redis:/data"]
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  kafka:
+    image: apache/kafka:3.9.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      # Single broker, one partition per topic, validation-scale throughput.
+      # The image default is -Xmx1G -Xms1G, which pre-commits a gigabyte of
+      # heap against a measured 335MiB working set.
+      KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m"
+    # `instrument.registry.v1` is compacted and the Flink normalizer resolves
+    # every conId against it. Without a durable volume a recreated broker loses
+    # it and the whole market data path dead-letters.
+    volumes: ["options_kafka:/var/lib/kafka/data"]
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+  flink-jobmanager:
+    image: flink:1.20.1-scala_2.12-java17
+    platform: linux/amd64
+    command: jobmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        parallelism.default: 1
+        execution.checkpointing.interval: 10s
+        # The JobManager only coordinates checkpoints and failover for a single
+        # parallelism-1 job. The image default of 1600m reserves a pre-touched
+        # 1g heap (-Xms1G -Xms1G) and measured 1.20GiB resident for that work.
+        jobmanager.memory.process.size: 1024m
+    ports: ["127.0.0.1:18081:8081"]
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      kafka: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/overview >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+  flink-taskmanager:
+    image: flink:1.20.1-scala_2.12-java17
+    platform: linux/amd64
+    command: taskmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        # The five market-data stages now share one job, so one slot holds the
+        # whole pipeline. The spare slots are headroom for a stage submitted on
+        # its own via EXECUTION_REQUIRED_FLINK_JOBS while debugging.
+        taskmanager.numberOfTaskSlots: 2
+        # Was 512m for five user classloaders. One job loads one, but repeated
+        # re-submission still churns metaspace, so this keeps headroom over the
+        # 256m image default rather than dropping all the way back.
+        taskmanager.memory.jvm-metaspace.size: 384m
+        # Was 6144m. That figure had to cover five classloaders and five Beam
+        # Python harnesses; one job needs one of each. The five harnesses
+        # measured 1.26GB resident on their own.
+        taskmanager.memory.process.size: 3072m
+        # Was 512m each, sized for five sets of Beam gRPC data/state channels.
+        # One harness needs far less, but these stay explicit rather than left
+        # to the derived fractions -- that is what previously under-provisioned
+        # direct memory and killed the TaskManager.
+        taskmanager.memory.task.off-heap.size: 256m
+        taskmanager.memory.framework.off-heap.size: 256m
+        parallelism.default: 1
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      flink-jobmanager: {condition: service_healthy}
+  paper-ibkr-gateway:
+    # Built from gateway/IB_gateway. The published options-20260923.3 tag matches
+    # this tree; override OPTIONS_GATEWAY_IMAGE to run it instead of a local build.
+    image: ${OPTIONS_GATEWAY_IMAGE:-finflock-ib-gateway:options-local}
+    platform: linux/amd64
+    environment:
+      DJANGO_SECRET_KEY: ${LOCAL_DJANGO_SECRET:?Set LOCAL_DJANGO_SECRET}
+      GATEWAY_SERVICE_TOKEN: ${LOCAL_GATEWAY_TOKEN:?Set LOCAL_GATEWAY_TOKEN}
+      NOVNC_PASSWORD: ${LOCAL_NOVNC_PASSWORD:?Set LOCAL_NOVNC_PASSWORD}
+      ALLOWED_HOSTS: "*"
+      BROKER_ADAPTER: ib_async
+      # No IBKR_MARKET_DATA_TYPE: the trading mode decides. Paper resolves to
+      # DELAYED, live to LIVE.
+      IBC_TRADING_MODE: paper
+      IB_USERNAME: ${username:?Set username in .env}
+      IB_PASSWORD: ${password:?Set password in .env}
+      IBKR_CLIENT_ID: 91
+      # The gateway's SQLite file is the only writer contention point in this
+      # stack, and a validation run generates tens of thousands of snapshot
+      # events a day. Seven days of them grew the file past 160MB, at which
+      # point concurrent writes exceeded the 20s busy timeout and surfaced as
+      # "database is locked". One day of acknowledged history is plenty here.
+      GATEWAY_EVENT_RETENTION_DAYS: 1
+      GATEWAY_HEALTH_RETENTION_DAYS: 1
+      GATEWAY_COMPACTION_SECONDS: 300
+      GATEWAY_COMPACTION_BATCH_SIZE: 20000
+      # x11vnc + noVNC, ~64MB, only useful when a human is watching the IB
+      # Gateway window at http://127.0.0.1:18082/novnc/. Xvfb and the window
+      # manager always run -- IB Gateway needs a display and IBC drives its
+      # login dialog. Set to "true" to watch a login problem live.
+      GATEWAY_REMOTE_DESKTOP_ENABLED: "false"
+    ports: ["127.0.0.1:18082:8080"]
+    volumes: ["options_gateway:/data"]
+    restart: unless-stopped
+    logging: *default-logging
+    # The image's own HEALTHCHECK is /healthz, which is liveness: it stays green
+    # while IB Gateway is crash-looping or still waiting to log in, so gating the
+    # backend on it starts a stack that cannot trade. /readyz is the trading
+    # gate -- gunicorn and nginx up, IB Gateway running, the TWS API port
+    # listening, and the broker CONNECTED and reconciled. start_period covers
+    # IBC's login, during which failures do not count against the container.
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/readyz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
+  backend:
+    image: finflock-trading-engine:options-local
+    platform: linux/amd64
+    environment:
+      DJANGO_SECRET_KEY: ${LOCAL_DJANGO_SECRET:?Set LOCAL_DJANGO_SECRET}
+      ALLOWED_HOSTS: "*"
+      APP_BASE_PATH: ""
+      DATABASE_URL: postgresql://trading:${LOCAL_DB_PASSWORD}@postgres:5432/options_validation
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: options_validation
+      POSTGRES_USER: trading
+      POSTGRES_PASSWORD: ${LOCAL_DB_PASSWORD}
+      # Host/port/db only. The password comes from REDIS_PASSWORD and is injected by config/settings.py.
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+      # QCH LLM gateway (optional locally; the key is read from your shell/.env, never stored here).
+      INTELLIGENCE_LLM_PROVIDER: ${INTELLIGENCE_LLM_PROVIDER:-fake}
+      QCH_BASE_URL: ${QCH_BASE_URL:-https://qfsplatform.com/qch-ai}
+      QCH_API_KEY: ${QCH_API_KEY:-}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_ENABLED: "true"
+      KAFKA_TOPIC_PARTITIONS: 1
+      FLINK_REST_URL: http://flink-jobmanager:8081
+      # No FLINK_JOB_BOOTSTRAP_MAX_ATTEMPTS override: the script's own default of
+      # 30 attempts (2s apart) is what lets the backend outwait a JobManager whose
+      # REST endpoint is not yet serving. Overriding it to 3 gave up after ~8
+      # seconds and left the stack with zero Flink jobs and no retry.
+      FLINK_JOB_START_TIMEOUT_SECONDS: 120
+      CLEANUP_DATABASE_ON_START: "false"
+      ALLOW_LIVE_TRADING: "false"
+      OPTION_CHAIN_PROVIDER: IBKR
+      # Risk evaluation is off for option orders in this validation stack. The
+      # available-position check rejects every short leg of a credit structure,
+      # which left the hedges filled and the shorts refused -- an iron condor
+      # entered as a long strangle. Kill switches still apply.
+      OPTION_PRETRADE_RISK_ENABLED: "false"
+      # The source's remote feature database. Supplies the daily RPS features
+      # and the precomputed IV rank/percentile; IBKR stays the only quote and
+      # execution path. Unset leaves RPS on subscription-persisted daily bars.
+      REMOTE_FEATURE_DB_URL: ${REMOTE_FEATURE_DB_URL:-}
+      LOCAL_PAPER_GATEWAY_URL: http://paper-ibkr-gateway:8080/api/v1
+      LOCAL_PAPER_GATEWAY_SERVICE_TOKEN: ${LOCAL_GATEWAY_TOKEN}
+      LOCAL_PAPER_GATEWAY_NOVNC_PASSWORD: ${LOCAL_NOVNC_PASSWORD}
+      BROKER_SESSION_ENCRYPTION_KEY: ${LOCAL_ENCRYPTION_KEY:?Set LOCAL_ENCRYPTION_KEY}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      kafka: {condition: service_healthy}
+      flink-jobmanager: {condition: service_healthy}
+      flink-taskmanager: {condition: service_started}
+      paper-ibkr-gateway: {condition: service_healthy}
+    ports: ["127.0.0.1:18000:8000"]
+    restart: unless-stopped
+    logging: *default-logging
+volumes:
+  options_redis:
+  options_kafka:
+  options_postgres:
+  options_gateway:

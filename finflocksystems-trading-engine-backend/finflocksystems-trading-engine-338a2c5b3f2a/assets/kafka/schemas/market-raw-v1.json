@@ -1,0 +1,34 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://finflock.local/schemas/market-raw-v1.json",
+  "type":"object",
+  "required":["source_event_id","conid","symbol","event_time","event_kind","provider"],
+  "properties":{
+    "source_event_id":{"type":"string","minLength":1},
+    "subscription_key":{"type":"string","minLength":3},
+    "instrument_id":{"type":["integer","string"]},
+    "conid":{"type":"integer","minimum":1},
+    "symbol":{"type":"string","minLength":1},
+    "event_time":{"type":"string","format":"date-time"},
+    "event_kind":{"enum":["TICK","BAR"]},
+    "price":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"},
+    "volume":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"},
+    "open":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"},
+    "high":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"},
+    "low":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"},
+    "close":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"},
+    "timeframe":{"type":"string"},
+    "window_start":{"type":"string","format":"date-time"},
+    "window_end":{"type":"string","format":"date-time"},
+    "provider":{"enum":["IBKR","FINNHUB"]},
+    "provider_symbol":{"type":["string","null"]},
+    "provider_generation":{"type":["string","null"],"format":"uuid"},
+    "fallback_reason":{"type":"string"}
+    ,"processing_mode":{"enum":["LIVE","WARMUP","REPLAY","BACKFILL"]}
+  },
+  "allOf":[
+    {"if":{"properties":{"event_kind":{"const":"TICK"}}},"then":{"required":["price"]}},
+    {"if":{"properties":{"event_kind":{"const":"BAR"}}},"then":{"required":["open","high","low","close","timeframe","window_start","window_end"]}}
+  ],
+  "additionalProperties":true
+}

@@ -1,0 +1,64 @@
+{
+ "economicCalendar": [
+  {
+   "actual": 56.7,
+   "country": "IN",
+   "estimate": null,
+   "event": "HSBC Composite PMI Flash",
+   "impact": "medium",
+   "prev": 55.9,
+   "time": "2026-10-23 05:00:00",
+   "unit": ""
+  },
+  {
+   "actual": 54.9,
+   "country": "IN",
+   "estimate": null,
+   "event": "HSBC Manufacturing PMI Flash",
+   "impact": "medium",
+   "prev": 55.1,
+   "time": "2026-10-23 05:00:00",
+   "unit": ""
+  },
+  {
+   "actual": 56.2,
+   "country": "IN",
+   "estimate": null,
+   "event": "HSBC Services PMI Flash",
+   "impact": "medium",
+   "prev": 55.2,
+   "time": "2026-10-23 05:00:00",
+   "unit": ""
+  },
+  {
+   "actual": null,
+   "country": "US",
+   "estimate": 0.6,
+   "event": "Durable Goods Orders MoM",
+   "impact": "high",
+   "prev": 0,
+   "time": "2026-10-27 12:30:00",
+   "unit": "%"
+  },
+  {
+   "actual": null,
+   "country": "US",
+   "estimate": 4,
+   "event": "Fed Interest Rate Decision",
+   "impact": "high",
+   "prev": 4,
+   "time": "2026-10-28 18:00:00",
+   "unit": "%"
+  },
+  {
+   "actual": null,
+   "country": "US",
+   "estimate": null,
+   "event": "Fed Press Conference",
+   "impact": "high",
+   "prev": null,
+   "time": "2026-10-28 18:30:00",
+   "unit": ""
+  }
+ ]
+}

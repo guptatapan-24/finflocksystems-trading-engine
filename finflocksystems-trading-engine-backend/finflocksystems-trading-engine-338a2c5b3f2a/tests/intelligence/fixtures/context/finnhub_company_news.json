@@ -1,0 +1,35 @@
+[
+ {
+  "category": "company",
+  "datetime": 1792803983,
+  "headline": "How much Apple stock does former CEO Tim Cook actually own?",
+  "id": 143141064,
+  "image": "https://s.yimg.com/rz/stage/p/yahoo_finance_en-US_h_p_finance_2.png",
+  "related": "AAPL",
+  "source": "Yahoo",
+  "summary": "Tim Cook took over as CEO after founder Steve Jobs’ death in 2011 but stepped down 15 years later. Here’s how many Apple shares the ex-CEO o",
+  "url": "https://finnhub.io/api/news?id=b646d7ae2b5dd766267b3e5703c7c58c251eddde8f76da29d2fdad6f8736a7a7"
+ },
+ {
+  "category": "company",
+  "datetime": 1792794957,
+  "headline": "S&P 500, Dow Drop As Elevated Oil Prices Stoke Inflation Fears Ahead Of Fed Meeting Next Week — AAPL, AXP, CART, UBER In Focus",
+  "id": 143137217,
+  "image": "https://s.yimg.com/rz/stage/p/yahoo_finance_en-US_h_p_finance_2.png",
+  "related": "AAPL",
+  "source": "Yahoo",
+  "summary": "Brent crude rose 3.1% to end the session at $116.72 a barrel, the highest level since April.",
+  "url": "https://finnhub.io/api/news?id=80bbd637676f4f2dc8208719fb33387328a1fb3edcd3295ba57ccef3aea9c748"
+ },
+ {
+  "category": "company",
+  "datetime": 1792792202,
+  "headline": "Will Apple Take Over Your (Smart) Home?",
+  "id": 143136900,
+  "image": "https://s.yimg.com/rz/stage/p/yahoo_finance_en-US_h_p_finance_2.png",
+  "related": "AAPL",
+  "source": "Yahoo",
+  "summary": "Apple is making a new push into smart homes, but will consumers pay premium prices for products they can already get elsewhere?",
+  "url": "https://finnhub.io/api/news?id=e146adee7ed6f5dcffaccda44facbc11367a369e42aa36fbcdec298f9cc6f6e9"
+ }
+]

@@ -1,0 +1,37 @@
+{
+ "earningsCalendar": [
+  {
+   "date": "2026-10-30",
+   "epsActual": null,
+   "epsEstimate": 3.8231,
+   "hour": "bmo",
+   "quarter": 3,
+   "revenueActual": null,
+   "revenueEstimate": 17702881065,
+   "symbol": "ABBV",
+   "year": 2026
+  },
+  {
+   "date": "2026-10-30",
+   "epsActual": null,
+   "epsEstimate": 0.0732,
+   "hour": "",
+   "quarter": 3,
+   "revenueActual": null,
+   "revenueEstimate": 48421925,
+   "symbol": "ABR",
+   "year": 2026
+  },
+  {
+   "date": "2026-10-30",
+   "epsActual": null,
+   "epsEstimate": 0.6747,
+   "hour": "",
+   "quarter": 3,
+   "revenueActual": null,
+   "revenueEstimate": 625440203,
+   "symbol": "AMCX",
+   "year": 2026
+  }
+ ]
+}

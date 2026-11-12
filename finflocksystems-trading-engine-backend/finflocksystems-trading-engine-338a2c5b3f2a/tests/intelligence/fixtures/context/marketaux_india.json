@@ -1,0 +1,106 @@
+{
+ "data": [
+  {
+   "description": "ICICI Bank and Indian Bank have revised fixed deposit (FD) interest rates from 23 October 2026. Check the latest FD rates for general deposi",
+   "entities": [
+    {
+     "country": "in",
+     "exchange": null,
+     "exchange_long": null,
+     "highlights": [],
+     "industry": "Financial Services",
+     "match_score": 67.949776,
+     "name": "Indian Bank",
+     "sentiment_score": 0.56052,
+     "symbol": "INDIANB.NS",
+     "type": "equity"
+    },
+    {
+     "country": "in",
+     "exchange": null,
+     "exchange_long": null,
+     "highlights": [],
+     "industry": "Financial Services",
+     "match_score": 67.949875,
+     "name": "Indian Bank",
+     "sentiment_score": 0.56052,
+     "symbol": "INDIANB.BO",
+     "type": "equity"
+    }
+   ],
+   "image_url": "https://www.livemint.com/lm-img/img/2026/10/24/1600x900/logo/Screenshot_2023-06-20_101458_1687236780221_1792818521087_6lOa_de0efc33-3c9b-4832-9aef-f607ac2ea8ea_H6sF.png",
+   "keywords": "ICICI Bank FD rates, Indian Bank FD rates, fixed deposit interest rates, FD interest rates 2026, FD rates below  <span class='webrupee'>₹</span>3 crore",
+   "language": "en",
+   "published_at": "2026-10-24T05:42:39.000000Z",
+   "relevance_score": null,
+   "similar": [],
+   "snippet": "ICICI Bank and Indian Bank have revised fixed deposit (FD) interest rates on select tenures, with effect from 23 October 2026. These are cha",
+   "source": "livemint.com",
+   "title": "ICICI Bank, Indian Bank hike FD rates: Check latest rates for senior citizens and general depositors",
+   "url": "https://www.livemint.com/money/personal-finance/icici-bank-indian-bank-hike-fd-rates-check-latest-rates-for-senior-citizens-and-general-depositors-11792817920474.html",
+   "uuid": "9558595c-1221-45e9-b764-822ca63d1915"
+  },
+  {
+   "description": "With uncertainty clouding equity markets, investors looking to deploy a lumpsum face the challenge of allocating their money across asset cl",
+   "entities": [
+    {
+     "country": "in",
+     "exchange": null,
+     "exchange_long": null,
+     "highlights": [],
+     "industry": "N/A",
+     "match_score": 29.6013,
+     "name": "Nifty 500",
+     "sentiment_score": -0.4588,
+     "symbol": "^CRSLDX",
+     "type": "index"
+    }
+   ],
+   "image_url": "https://img.etimg.com/thumb/msid-135161994,width-1200,height-900,overlay-etwealthmutualfunds/slideshow.jpg",
+   "keywords": "Bandhan Small Cap Fund, HDFC Mid Cap Fund, UTI Gold ETF, ITI Small Cap Fund, Quant Large Cap Fund, gold ETFs, mutual funds, mutual fund news",
+   "language": "en",
+   "published_at": "2026-10-24T04:28:03.000000Z",
+   "relevance_score": null,
+   "similar": [],
+   "snippet": "Equity - Around 20% allocation in equity. Rs 1 lakh in Motilal Oswal Nifty 500 Index Fund and Rs 1 lakh in HDFC Flexi Cap Fund with STP over",
+   "source": "economictimes.indiatimes.com",
+   "title": "Where should conservative investors invest Rs 10 lakh in a volatile market? Experts weigh in - A volatile ride",
+   "url": "https://economictimes.indiatimes.com/mf/analysis/where-should-conservative-investors-invest-rs-10-lakh-in-a-volatile-market-experts-weigh-in/slideshow/135161994.cms",
+   "uuid": "a5b6739f-d89d-4ead-8970-bc9ba9859873"
+  },
+  {
+   "description": "JSW Steel achieved an impressive three-fold rise in its consolidated net profit for the September quarter, highlighted by a record-breaking ",
+   "entities": [
+    {
+     "country": "in",
+     "exchange": null,
+     "exchange_long": null,
+     "highlights": [],
+     "industry": "Basic Materials",
+     "match_score": 62.728794,
+     "name": "JSW Steel Limited",
+     "sentiment_score": 0.5704,
+     "symbol": "JSWSTEEL.BO",
+     "type": "equity"
+    }
+   ],
+   "image_url": "https://img.etimg.com/thumb/msid-135161212,width-1200,height-900,imgsize-112078,overlay-etmarkets/articleshow.jpg",
+   "keywords": "jsw steel, JSW Steel, net profit, profit growth, steel production, Utkal Odisha expansion",
+   "language": "en",
+   "published_at": "2026-10-24T03:43:02.000000Z",
+   "relevance_score": null,
+   "similar": [],
+   "snippet": "Live Events\n\n\n\nas a Reliable and Trusted News Source Addas a Reliable and Trusted News Source Add Now!\n\n(You can now subscribe to our\n\n(You ",
+   "source": "economictimes.indiatimes.com",
+   "title": "JSW Steel posts three-fold jump in profit, lines up capacity expansion",
+   "url": "https://economictimes.indiatimes.com/markets/stocks/earnings/jsw-steel-posts-three-fold-jump-in-profit-lines-up-capacity-expansion/articleshow/135161181.cms",
+   "uuid": "eee99bd8-b08d-4069-8b9f-974c979919d8"
+  }
+ ],
+ "meta": {
+  "found": 335544,
+  "limit": 3,
+  "page": 1,
+  "returned": 3
+ }
+}

@@ -1,0 +1,48 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+/node_modules
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local environment and runtime data
+.env
+.env.*
+!.env.example
+db.sqlite3
+db.sqlite3-*
+
+# Coverage and build output
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+build/
+dist/
+*.egg-info/
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+
+# Local investigation output and AI-assistant notes: never part of a deployment
+diagnostics/
+diagnostics_*.zip
+claude *.md
+CLAUDE_*.md
+
+
+
+# Local-only copy of the ingestion secrets (never commit)
+.nfo-ingest.env

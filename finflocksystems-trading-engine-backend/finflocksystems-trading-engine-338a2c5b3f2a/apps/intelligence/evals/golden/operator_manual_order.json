@@ -1,0 +1,53 @@
+{
+  "expect": {
+    "categories_any": [
+      "MANUAL_INTERVENTION"
+    ],
+    "description": "The operator's own order is a process fact; the outcome is not purely the strategy's.",
+    "no_unflagged_parameter_change": true
+  },
+  "facts": {
+    "episode.asset_family": "STOCK",
+    "episode.commissions": "2",
+    "episode.currency": "USD",
+    "episode.direction": "LONG",
+    "episode.execution_mode": "PAPER",
+    "episode.exit_reason": "SIGNAL",
+    "episode.gross_pnl": "250",
+    "episode.instrument": "AAPL",
+    "episode.net_pnl": "248",
+    "episode.strategy_key": "SMA_CROSSOVER",
+    "metrics.entry.sma_fast": 201.1,
+    "metrics.entry.sma_slow": 200.4,
+    "metrics.exec.fill_count": 2,
+    "metrics.exec.slippage_bps_entry": 2.5,
+    "metrics.exit.reason": "SIGNAL",
+    "metrics.outcome.cost_bps": 2.0,
+    "metrics.outcome.is_closed": true,
+    "metrics.outcome.net_pnl": 248.0,
+    "metrics.outcome.net_return_bps": 248.0,
+    "operator.changes_during_hold": 0,
+    "operator.event_count": 2,
+    "operator.events[0].note": "Added to the position by hand because the open looked weak.",
+    "operator.events[0].type": "NOTE",
+    "operator.events[1].quantity": "10",
+    "operator.events[1].side": "BUY",
+    "operator.events[1].type": "MANUAL_ORDER",
+    "operator.manual_orders_during_hold": 1,
+    "param_schema.fast_window.minimum": 2,
+    "param_schema.fast_window.type": "integer",
+    "params.direction": "LONG",
+    "params.fast_window": 20,
+    "params.slow_window": 50,
+    "retrieved_lessons.count": 0,
+    "sample.n_closed_same_instance_currency": 1,
+    "strategy_stats.available": false
+  },
+  "name": "operator_manual_order",
+  "parameters": {
+    "direction": "LONG",
+    "fast_window": 20,
+    "slow_window": 50
+  },
+  "strategy_key": "SMA_CROSSOVER"
+}

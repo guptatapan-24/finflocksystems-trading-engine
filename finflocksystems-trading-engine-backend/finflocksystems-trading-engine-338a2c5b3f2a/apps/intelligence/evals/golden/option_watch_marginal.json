@@ -1,0 +1,48 @@
+{
+  "expect": {
+    "categories_any": [
+      "DATA_QUALITY",
+      "SIZING",
+      "PARAMETER_MISFIT"
+    ],
+    "description": "Marginal WATCH-band entry with missing score components.",
+    "no_unflagged_parameter_change": true
+  },
+  "facts": {
+    "data_quality_flags[0]": "MISSING_REMOTE_FEATURES",
+    "episode.asset_family": "OPTION",
+    "episode.commissions": "16",
+    "episode.currency": "INR",
+    "episode.direction": "NET_CREDIT",
+    "episode.execution_mode": "PAPER",
+    "episode.exit_reason": "EXPIRY_RULE",
+    "episode.instrument": "NIFTY",
+    "episode.net_pnl": "829",
+    "episode.strategy_key": "RPS_OPTIONS_AUTO_SELECTOR",
+    "metrics.exec.entry_order_type": "MKT",
+    "metrics.exit.reason": "EXPIRY_RULE",
+    "metrics.margin.rps": 1.0,
+    "metrics.margin.tqs": 3.0,
+    "metrics.opt.decision_band": "WATCH",
+    "metrics.opt.entry_score": 61.0,
+    "metrics.opt.pop": 0.71,
+    "metrics.opt.tqs": 58.0,
+    "metrics.opt.tqs_coverage": 0.8,
+    "metrics.opt.tqs_unmeasured": "C3_TERM,B1_EVRISK",
+    "metrics.opt.tqs_unmeasured_count": 2,
+    "metrics.outcome.is_closed": true,
+    "metrics.outcome.net_pnl": 829.0,
+    "metrics.outcome.net_return_bps": 120.0,
+    "params.lots": 1,
+    "params.rps_threshold": 60,
+    "retrieved_lessons.count": 0,
+    "sample.n_closed_same_instance_currency": 1,
+    "strategy_stats.available": false
+  },
+  "name": "option_watch_marginal",
+  "parameters": {
+    "lots": 1,
+    "rps_threshold": 60
+  },
+  "strategy_key": "RPS_OPTIONS_AUTO_SELECTOR"
+}

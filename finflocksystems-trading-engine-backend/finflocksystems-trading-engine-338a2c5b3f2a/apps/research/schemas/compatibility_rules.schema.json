@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "required": ["metadata", "global_rules", "gics_overrides"],
+  "properties": {"metadata": {"type": "object"}, "global_rules": {"type": "array"}, "gics_overrides": {"type": "array"}}
+}

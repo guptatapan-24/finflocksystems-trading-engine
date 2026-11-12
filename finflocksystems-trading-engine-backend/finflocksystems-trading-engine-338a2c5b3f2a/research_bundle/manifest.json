@@ -1,0 +1,108 @@
+{
+  "bundle_name": "Trading Engine Stock and Strategy Research Universe",
+  "generated_on": "2026-07-15",
+  "files": [
+    {
+      "name": "gics_taxonomy.json",
+      "bytes": 37432,
+      "sha256": "6b2d496999b4fcdb99d59928a641e573eec5b46dfb057a214e9bfd7f191e1854"
+    },
+    {
+      "name": "stock_universe.json",
+      "bytes": 984131,
+      "sha256": "99d908a499bceb7eb4c25412029a7331ca5d097db87138cb6bc5b4b0b1eedae9"
+    },
+    {
+      "name": "strategy_universe.json",
+      "bytes": 297522,
+      "sha256": "ae53814cace43254b56a3355391609b0616b4762dc33d95fffd1231874d7eb98"
+    },
+    {
+      "name": "backtest_spec.json",
+      "bytes": 8640,
+      "sha256": "060440b846fe759e878f5769dc56784a4e6e56b022a4e888067a9a631ecf49bf"
+    },
+    {
+      "name": "compatibility_rules.json",
+      "bytes": 3798,
+      "sha256": "ff32ed2a7cf9d7e6f6f0f9ce807ae4e1b9ef4048fb353cd9082c6501561c21e2"
+    }
+  ],
+  "counts": {
+    "stocks": 500,
+    "gics_sectors_represented": 11,
+    "gics_industry_groups_represented": 25,
+    "gics_industries_represented": 69,
+    "gics_sub_industries_represented": 127,
+    "full_gics_taxonomy_sub_industries": 163,
+    "strategies": 97,
+    "strategy_families": 10
+  },
+  "stock_distribution": {
+    "by_sector": {
+      "Communication Services": 20,
+      "Consumer Discretionary": 47,
+      "Consumer Staples": 34,
+      "Energy": 21,
+      "Financials": 76,
+      "Health Care": 59,
+      "Industrials": 81,
+      "Information Technology": 74,
+      "Materials": 26,
+      "Real Estate": 31,
+      "Utilities": 31
+    },
+    "by_industry_group": {
+      "Automobiles & Components": 4,
+      "Banks": 13,
+      "Capital Goods": 55,
+      "Commercial & Professional Services": 12,
+      "Consumer Discretionary Distribution & Retail": 14,
+      "Consumer Durables & Apparel": 11,
+      "Consumer Services": 18,
+      "Consumer Staples Distribution & Retail": 8,
+      "Energy": 21,
+      "Equity Real Estate Investment Trusts (REITs)": 29,
+      "Financial Services": 40,
+      "Food, Beverage & Tobacco": 19,
+      "Health Care Equipment & Services": 36,
+      "Household & Personal Products": 7,
+      "Insurance": 23,
+      "Materials": 26,
+      "Media & Entertainment": 16,
+      "Pharmaceuticals, Biotechnology & Life Sciences": 23,
+      "Real Estate Management & Development": 2,
+      "Semiconductors & Semiconductor Equipment": 20,
+      "Software & Services": 28,
+      "Technology Hardware & Equipment": 26,
+      "Telecommunication Services": 4,
+      "Transportation": 14,
+      "Utilities": 31
+    }
+  },
+  "strategy_distribution": {
+    "allocation": 7,
+    "baseline": 3,
+    "cross_sectional_factor": 16,
+    "event": 8,
+    "income": 5,
+    "mean_reversion": 13,
+    "momentum": 14,
+    "statistical_arbitrage": 8,
+    "trend": 15,
+    "volatility_control": 8
+  },
+  "usage_order": [
+    "gics_taxonomy.json",
+    "stock_universe.json",
+    "strategy_universe.json",
+    "compatibility_rules.json",
+    "backtest_spec.json"
+  ],
+  "warnings": [
+    "Not investment advice or a ready-to-trade recommendation.",
+    "The stock list is a current snapshot and causes survivorship bias if used directly for historical claims.",
+    "The GICS representation is a public research transcription, not an official licensed GICS data product.",
+    "Strategies are hypotheses. They require point-in-time data, realistic costs and independent out-of-sample validation."
+  ]
+}

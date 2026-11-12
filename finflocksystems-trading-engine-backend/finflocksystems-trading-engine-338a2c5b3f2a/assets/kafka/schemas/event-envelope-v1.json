@@ -1,0 +1,14 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://finflock.local/schemas/event-envelope-v1.json",
+  "title":"Finflock event envelope v1","type":"object","additionalProperties":false,
+  "required":["event_id","event_type","schema_version","occurred_at","produced_at","producer","aggregate_type","aggregate_id","correlation_id","causation_id","idempotency_key","payload"],
+  "properties":{
+    "event_id":{"type":"string","format":"uuid"},"event_type":{"type":"string","minLength":1},
+    "schema_version":{"const":1},"occurred_at":{"type":"string","format":"date-time"},
+    "produced_at":{"type":"string","format":"date-time"},"producer":{"type":"string","minLength":1},
+    "aggregate_type":{"type":"string","minLength":1},"aggregate_id":{"type":"string","minLength":1},
+    "correlation_id":{"type":"string","format":"uuid"},"causation_id":{"type":["string","null"],"format":"uuid"},
+    "idempotency_key":{"type":"string","minLength":1},"payload":{"type":"object"}
+  }
+}

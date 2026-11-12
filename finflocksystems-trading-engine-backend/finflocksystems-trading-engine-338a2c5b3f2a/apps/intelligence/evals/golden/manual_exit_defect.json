@@ -1,0 +1,48 @@
+{
+  "expect": {
+    "categories_any": [
+      "MANUAL_INTERVENTION",
+      "EXIT_TIMING",
+      "RULE_VIOLATION"
+    ],
+    "description": "A manual exit is a defect, not a parameter problem.",
+    "no_unflagged_parameter_change": false
+  },
+  "facts": {
+    "data_quality_flags[0]": "MANUAL_INTERVENTION",
+    "episode.asset_family": "STOCK",
+    "episode.commissions": "2",
+    "episode.currency": "USD",
+    "episode.direction": "LONG",
+    "episode.execution_mode": "PAPER",
+    "episode.exit_reason": "MANUAL",
+    "episode.gross_pnl": "250",
+    "episode.instrument": "AAPL",
+    "episode.net_pnl": "-120",
+    "episode.strategy_key": "SMA_CROSSOVER",
+    "metrics.entry.sma_fast": 201.1,
+    "metrics.entry.sma_slow": 200.4,
+    "metrics.exec.fill_count": 2,
+    "metrics.exec.slippage_bps_entry": 2.5,
+    "metrics.exit.reason": "MANUAL",
+    "metrics.outcome.cost_bps": 2.0,
+    "metrics.outcome.is_closed": true,
+    "metrics.outcome.net_pnl": -120.0,
+    "metrics.outcome.net_return_bps": -120.0,
+    "param_schema.fast_window.minimum": 2,
+    "param_schema.fast_window.type": "integer",
+    "params.direction": "LONG",
+    "params.fast_window": 20,
+    "params.slow_window": 50,
+    "retrieved_lessons.count": 0,
+    "sample.n_closed_same_instance_currency": 1,
+    "strategy_stats.available": false
+  },
+  "name": "manual_exit_defect",
+  "parameters": {
+    "direction": "LONG",
+    "fast_window": 20,
+    "slow_window": 50
+  },
+  "strategy_key": "SMA_CROSSOVER"
+}

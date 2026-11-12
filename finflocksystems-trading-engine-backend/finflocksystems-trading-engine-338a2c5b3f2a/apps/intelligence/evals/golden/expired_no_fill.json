@@ -1,0 +1,45 @@
+{
+  "expect": {
+    "categories_any": [
+      "RULE_VIOLATION",
+      "DATA_QUALITY"
+    ],
+    "description": "Expired with no closing order: an execution defect.",
+    "no_unflagged_parameter_change": false
+  },
+  "facts": {
+    "data_quality_flags[0]": "PNL_ESTIMATED_AT_EXPIRY",
+    "episode.asset_family": "OPTION",
+    "episode.commissions": "16",
+    "episode.currency": "INR",
+    "episode.direction": "NET_CREDIT",
+    "episode.execution_mode": "PAPER",
+    "episode.exit_reason": "EXPIRED_NO_FILL",
+    "episode.instrument": "NIFTY",
+    "episode.net_pnl": "-540",
+    "episode.strategy_key": "RPS_OPTIONS_AUTO_SELECTOR",
+    "metrics.exec.entry_order_type": "MKT",
+    "metrics.exit.reason": "EXPIRED_NO_FILL",
+    "metrics.margin.rps": 1.0,
+    "metrics.margin.tqs": 3.0,
+    "metrics.opt.decision_band": "WATCH",
+    "metrics.opt.entry_score": 61.0,
+    "metrics.opt.pop": 0.71,
+    "metrics.opt.tqs": 58.0,
+    "metrics.opt.tqs_coverage": 0.8,
+    "metrics.outcome.is_closed": true,
+    "metrics.outcome.net_pnl": -540.0,
+    "metrics.outcome.net_return_bps": -310.0,
+    "params.lots": 1,
+    "params.rps_threshold": 60,
+    "retrieved_lessons.count": 0,
+    "sample.n_closed_same_instance_currency": 1,
+    "strategy_stats.available": false
+  },
+  "name": "expired_no_fill",
+  "parameters": {
+    "lots": 1,
+    "rps_threshold": 60
+  },
+  "strategy_key": "RPS_OPTIONS_AUTO_SELECTOR"
+}

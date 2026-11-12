@@ -1,0 +1,36 @@
+Django==5.1.7
+djangorestframework==3.15.2
+django-cors-headers==4.7.0
+dj-database-url==2.3.0
+psycopg[binary]==3.2.6
+celery[redis]==5.4.0
+# Pinned on purpose: kombu 5.7+ refuses to start its Redis transport with redis-py 5.x ("requires redis-py 6.1.0 or later"), which
+# crash-looped beat and every Celery worker on a fresh build. This pair was verified with a real Redis round trip.
+kombu==5.6.2
+redis==5.3.1
+gunicorn==23.0.0
+uvicorn==0.35.0
+uvicorn-worker==0.3.0
+httpx==0.28.1
+websockets==15.0.1
+requests==2.32.3
+pytest==8.3.5
+pytest-django==4.10.0
+responses==0.25.7
+confluent-kafka==2.8.0
+jsonschema==4.23.0
+prometheus-client==0.21.1
+cryptography==44.0.2
+websocket-client==1.8.0
+numpy==2.2.3
+scipy==1.16.3
+pandas==2.2.3
+pyarrow==19.0.1
+python-dotenv==1.2.2
+django-celery-results==2.6.0
+# apache-flink==1.20.1 — installed in the image's Python 3.11 venv (/opt/pyflink-venv), not here.
+# Keep in sync with Dockerfile: flink:1.20.1-scala_2.12-java17 + flink-sql-connector-kafka-3.3.0-1.20.
+# PDF export of intelligence reports (pure Python wheel; pulls in pillow and charset-normalizer)
+reportlab==5.0.0
+# NFO nightly ingestion (vendored nfo_pipeline imports it at load time; no IBKR API connection is ever opened from here)
+ibapi==9.81.1.post1

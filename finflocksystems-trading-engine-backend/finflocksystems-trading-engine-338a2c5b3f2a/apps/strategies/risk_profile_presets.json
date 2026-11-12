@@ -1,0 +1,62 @@
+{
+  "base": {
+    "direction": "MULTI_LEG",
+    "option_strike_count": 21,
+    "option_trading_class": null,
+    "round_trip_cost_per_lot": 40,
+    "lots": 1,
+    "daily_wilder_atr_period": 14,
+    "atr_multiplier": 0.75,
+    "entry_min_dte": 1,
+    "entry_max_dte": 45,
+    "minimum_open_interest": 100,
+    "minimum_volume": 1,
+    "hold_days": 0,
+    "exit_dte": 0,
+    "one_entry_per_expiry": false,
+    "session_open": "09:15",
+    "entry_delay_after_open": 0,
+    "exchange_timezone": "Asia/Kolkata",
+    "target_delta": -0.2,
+    "strike_width": 100,
+    "rps_iv_breach_enabled": true,
+    "rps_max_upper_breach_probability": 0.5,
+    "rps_max_lower_breach_probability": 0.5,
+    "rps_max_two_sided_breach_probability": null,
+    "rps_breach_simulation_paths": 10000,
+    "rps_pop_risk_free_rate": 0.068,
+    "rps_pop_dividend_yield": 0.012,
+    "rps_min_pop": 0,
+    "rps_require_positive_ev": false,
+    "rps_max_entry_loss": 0,
+    "rps_tqs_min_net_pnl": 0,
+    "dynamic_exit_enabled": true,
+    "dynamic_exit_soft_max_giveback": 0.25,
+    "dynamic_exit_soft_giveback_probability": 0.4,
+    "dynamic_exit_soft_profit_capture": 0.7,
+    "dynamic_exit_soft_volume_increase": 0.5,
+    "dynamic_exit_soft_iv_increase": 0.2,
+    "dynamic_exit_soft_min_ev_improvement": 0.05,
+    "dynamic_exit_soft_remaining_profit": 0.3,
+    "dynamic_exit_require_volume_and_iv": true,
+    "dhan_security_id": null,
+    "dhan_segment": null
+  },
+  "profiles": {
+    "CONSERVATIVE": {
+      "rps_entry_floor": 41,
+      "rps_iv_score_threshold": 30,
+      "rps_tqs_threshold": 39
+    },
+    "NEUTRAL": {
+      "rps_entry_floor": 38,
+      "rps_iv_score_threshold": 25,
+      "rps_tqs_threshold": 37
+    },
+    "AGGRESSIVE": {
+      "rps_entry_floor": 35,
+      "rps_iv_score_threshold": 20,
+      "rps_tqs_threshold": 35
+    }
+  }
+}

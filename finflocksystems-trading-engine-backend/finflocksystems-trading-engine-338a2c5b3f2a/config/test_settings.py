@@ -1,0 +1,63 @@
+from .settings import *  # noqa: F403,F401
+
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",
+    }
+}
+APP_BASE_PATH = ""
+FORCE_SCRIPT_NAME = None
+PUBLIC_BASE_URL = ""
+KAFKA_ENABLED = False
+# Risk profiling tests turn these on explicitly with override_settings.
+RISK_PROFILING_ENABLED = False
+RISK_PROFILING_SHADOW = False
+EXECUTION_ACTIVATION_PREFLIGHT_ENABLED = False
+EXECUTION_REGISTER_ADV_INPUT = False
+EXECUTION_ADV_TIMEFRAME = "1d"
+BROKER_SESSION_ENCRYPTION_KEY = "backend-test-encryption-key"
+# Heartbeat write coalescing keeps its "when did I last write" state in the
+# process, not the database. Tests roll the database back between cases but the
+# process survives, so a throttled second case would find no row. 0 disables it.
+EXECUTION_WORKER_HEARTBEAT_WRITE_INTERVAL_SECONDS = 0
+
+# The test suite must never depend on, or leak into, a developer's real intelligence settings or reach the LLM gateway (R9).
+INTELLIGENCE_ENABLED = False
+INTELLIGENCE_REVIEWS_ENABLED = False
+INTELLIGENCE_LLM_PROVIDER = "fake"
+# Tests must not depend on a developer .env: no remote feature database unless a test sets one.
+REMOTE_FEATURE_DB_URL = ""
+QCH_BASE_URL = "https://qch.test/qch-ai"
+QCH_API_KEY = ""
+QCH_THINKING = ""
+QCH_REASONING_HEADROOM_TOKENS = 4096
+QCH_CONNECT_TIMEOUT_SECONDS = 5.0
+QCH_MAX_TOKENS_CEILING = 32768
+QCH_TIMEOUT_DEEP_SECONDS = 300.0
+INTELLIGENCE_LLM_MAX_CONCURRENCY = 3
+INTELLIGENCE_MODEL_FAST = ""
+INTELLIGENCE_MODEL_REVIEW = ""
+INTELLIGENCE_MODEL_DEEP = ""
+INTELLIGENCE_DAILY_BUDGET_USD = "0"
+INTELLIGENCE_PRICE_INPUT_PER_MTOK_USD = "0"
+INTELLIGENCE_PRICE_OUTPUT_PER_MTOK_USD = "0"
+INTELLIGENCE_THINKING_LEVEL = ""
+INTELLIGENCE_THINKING_BUDGET = None
+INTELLIGENCE_TEMPERATURE = None
+INTELLIGENCE_RULE_THRESHOLDS = {}
+INTELLIGENCE_LIVE_THRESHOLDS = {}
+INTELLIGENCE_LEARNING_THRESHOLDS = {}
+INTELLIGENCE_METRICS_TOKEN = ""
+INTELLIGENCE_BUDGET_ALARM_PCT = 80.0
+INTELLIGENCE_ADVISORY_REQUIRE_ACK = False
+INTELLIGENCE_REPLAY_COST_BPS = 5.0
+INTELLIGENCE_REPORT_PDF_ENABLED = True
+INTELLIGENCE_SESSION_RECORD_ENABLED = False
+INTELLIGENCE_CONTEXT_ENABLED = False
+INTELLIGENCE_CONTEXT_SOURCES = "finnhub,marketaux,rbi,fed"
+MARKETAUX_API_KEY = ""
+MARKETAUX_DAILY_CALL_CAP = 60
+INTELLIGENCE_CONTEXT_RETENTION_DAYS = 120
+INTELLIGENCE_SESSION_FINALIZE_MINUTES = 30

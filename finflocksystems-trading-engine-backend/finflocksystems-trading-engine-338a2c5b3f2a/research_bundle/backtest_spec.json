@@ -1,0 +1,334 @@
+{
+  "metadata": {
+    "id": "daily_equity_walk_forward_v1",
+    "snapshot_date": "2026-07-15",
+    "purpose": "shared, reproducible validation contract for stock-strategy combinations"
+  },
+  "data_contract": {
+    "price_data": "split- and dividend-adjusted OHLCV plus unadjusted prices for execution and eligibility checks",
+    "universe": "point-in-time membership, delisted securities and historical classifications; present-day universe only for forward research",
+    "fundamentals": "as-reported point-in-time values with filing/publication timestamps and conservative availability lag",
+    "events": "exact announcement timestamp and timezone; unknown timing means next-session availability",
+    "quality_checks": [
+      "duplicate bars",
+      "missing sessions",
+      "non-positive prices",
+      "extreme return validation",
+      "corporate action reconciliation",
+      "ticker and identifier mapping",
+      "stale volume",
+      "timezone consistency"
+    ]
+  },
+  "simulation": {
+    "primary_frequency": "daily",
+    "secondary_frequencies": [
+      "1H",
+      "15m",
+      "5m only after daily framework passes"
+    ],
+    "signal_lag": "features through bar t may trade no earlier than bar t+1 unless timestamped intraday data proves availability",
+    "default_fill": "next-session volume-weighted or open-price model with configurable slippage",
+    "transaction_costs": {
+      "commission_bps_each_side": 1.0,
+      "spread_model": "max(estimated half-spread, 1 bp) with security-specific override",
+      "market_impact": "square-root impact using participation rate and median dollar volume",
+      "minimum_cost_scenarios_bps_round_trip": [
+        5,
+        10,
+        25,
+        50
+      ],
+      "borrow_cost": "required for research-only short legs"
+    },
+    "position_constraints": {
+      "long_only_default": true,
+      "gross_exposure_max": 1.0,
+      "single_name_cap_by_risk": {
+        "1": 0.05,
+        "2": 0.1,
+        "3": 0.15,
+        "4": 0.2,
+        "5": 0.25
+      },
+      "sector_cap_default": 0.25,
+      "industry_cap_default": 0.15,
+      "minimum_cash_by_risk": {
+        "1": 0.2,
+        "2": 0.1,
+        "3": 0.05,
+        "4": 0.0,
+        "5": 0.0
+      }
+    },
+    "corporate_actions": "use adjusted signals but executable unadjusted prices, preserve share quantity through splits, and include delisting proceeds/returns"
+  },
+  "validation": {
+    "minimum_history_trading_days": 756,
+    "preferred_history_trading_days": 2520,
+    "walk_forward": {
+      "training_years": [
+        3,
+        5,
+        10
+      ],
+      "validation_months": [
+        6,
+        12
+      ],
+      "test_months": [
+        6,
+        12
+      ],
+      "expanding_and_rolling_windows": true,
+      "minimum_test_windows": 5
+    },
+    "purging_and_embargo": {
+      "enabled": true,
+      "purge_length": "maximum label/holding horizon",
+      "embargo_fraction": 0.01
+    },
+    "regime_slices": [
+      "bull",
+      "bear",
+      "high_volatility",
+      "low_volatility",
+      "rising_rates",
+      "falling_rates",
+      "recession_proxy",
+      "sector_shock"
+    ],
+    "cross_sectional_slices": [
+      "sector",
+      "industry_group",
+      "industry",
+      "sub_industry",
+      "liquidity_decile",
+      "volatility_decile",
+      "market_cap_decile"
+    ],
+    "robustness_tests": [
+      "neighboring_parameter_stability",
+      "cost_stress",
+      "execution_delay",
+      "missing_data_stress",
+      "bootstrap_confidence_intervals",
+      "subperiod_consistency",
+      "leave-one-sector-out",
+      "leave-one-year-out"
+    ],
+    "multiple_testing_controls": [
+      "record every trial",
+      "deflated_sharpe_ratio",
+      "probability_of_backtest_overfitting",
+      "false_discovery_rate",
+      "holdout untouched until final approval"
+    ],
+    "survivorship_bias_policy": "Current 500-stock file is allowed for prospective experiments only. Historical performance claims require point-in-time constituents and delisted names."
+  },
+  "metrics": [
+    "cagr",
+    "annualized_volatility",
+    "sharpe",
+    "sortino",
+    "calmar",
+    "max_drawdown",
+    "drawdown_duration",
+    "var_95",
+    "cvar_95",
+    "turnover",
+    "hit_rate",
+    "profit_factor",
+    "exposure",
+    "beta",
+    "alpha",
+    "tracking_error",
+    "information_ratio",
+    "capacity_proxy",
+    "skew",
+    "kurtosis",
+    "omega_ratio",
+    "ulcer_index",
+    "tail_ratio",
+    "rolling_12m_sharpe",
+    "rolling_beta",
+    "sector_attribution",
+    "factor_exposures",
+    "average_holding_period",
+    "orders_per_year",
+    "median_trade_return",
+    "slippage_share_of_gross_alpha",
+    "deflated_sharpe_ratio",
+    "probability_of_backtest_overfitting"
+  ],
+  "strategy_stock_pair_scoring": {
+    "hard_rejections": [
+      "data_quality_failure",
+      "negative_net_performance_after_high_cost_scenario",
+      "single_subperiod_drives_majority_of pnl",
+      "maximum_drawdown_above_profile_limit",
+      "insufficient_trades",
+      "unstable_parameter_neighborhood",
+      "liquidity_or_capacity_failure",
+      "lookahead_or_timestamp_ambiguity"
+    ],
+    "normalized_components": {
+      "out_of_sample_sharpe": 0.2,
+      "calmar": 0.15,
+      "drawdown_fit": 0.15,
+      "regime_consistency": 0.15,
+      "parameter_stability": 0.1,
+      "cost_resilience": 0.1,
+      "turnover_efficiency": 0.05,
+      "capacity": 0.05,
+      "diversification_contribution": 0.05
+    },
+    "score_range": [
+      0,
+      100
+    ],
+    "minimum_score_to_enter_candidate_pool": 65,
+    "minimum_independent_test_windows": 5
+  },
+  "risk_timeframe_buckets": {
+    "NOW": {
+      "allowed_assets": [
+        "cash",
+        "cash_equivalents"
+      ],
+      "equity_strategies_allowed": false,
+      "target_horizon": "immediate liquidity"
+    },
+    "HURRY": {
+      "risk_levels": [
+        1,
+        2
+      ],
+      "target_horizon": "months to ~2 years",
+      "preferred_families": [
+        "baseline",
+        "allocation",
+        "trend",
+        "volatility_control",
+        "income"
+      ],
+      "max_expected_drawdown": 0.12,
+      "maximum_turnover_per_year": 4
+    },
+    "FAST": {
+      "risk_levels": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "target_horizon": "days to months",
+      "preferred_families": [
+        "trend",
+        "momentum",
+        "mean_reversion",
+        "event",
+        "volatility_control"
+      ],
+      "max_expected_drawdown_by_risk": {
+        "2": 0.12,
+        "3": 0.18,
+        "4": 0.25,
+        "5": 0.35
+      }
+    },
+    "BUILD": {
+      "risk_levels": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "target_horizon": "1-5 years",
+      "preferred_families": [
+        "allocation",
+        "trend",
+        "momentum",
+        "cross_sectional_factor",
+        "income",
+        "volatility_control"
+      ],
+      "rebalance": [
+        "monthly",
+        "quarterly"
+      ]
+    },
+    "GROW": {
+      "risk_levels": [
+        3,
+        4,
+        5
+      ],
+      "target_horizon": "3-10 years",
+      "preferred_families": [
+        "momentum",
+        "trend",
+        "cross_sectional_factor",
+        "allocation"
+      ],
+      "rebalance": [
+        "monthly",
+        "quarterly"
+      ]
+    },
+    "COMPOUND": {
+      "risk_levels": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "target_horizon": "5+ years",
+      "preferred_families": [
+        "baseline",
+        "allocation",
+        "cross_sectional_factor",
+        "income",
+        "trend",
+        "volatility_control"
+      ],
+      "rebalance": [
+        "quarterly",
+        "semiannual"
+      ]
+    }
+  },
+  "research_pipeline": [
+    "refresh point-in-time data and membership",
+    "apply stock eligibility filters",
+    "generate features without future leakage",
+    "run strategy parameter trials under a fixed budget",
+    "walk-forward and purged validation",
+    "apply costs and capacity limits",
+    "correct for multiple testing",
+    "score stock-strategy pairs",
+    "optimize combined portfolio under risk/timeframe constraints",
+    "stress test and store immutable recommendation snapshot"
+  ],
+  "compute_architecture": {
+    "offline_batch": [
+      "data refresh",
+      "feature calculation",
+      "all stock-strategy backtests",
+      "metric aggregation",
+      "candidate scoring"
+    ],
+    "online_request": [
+      "filter saved candidates by user risk/timeframe",
+      "portfolio optimization",
+      "stress test cached scenarios",
+      "produce explanation"
+    ],
+    "target_user_latency_seconds": [
+      3,
+      15
+    ]
+  }
+}

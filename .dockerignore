@@ -1,0 +1,34 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+config/test_settings.py
+db.sqlite3*
+
+# Node / Frontend artifacts
+node_modules/
+dist/
+*.tsbuildinfo
+.npm/
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+

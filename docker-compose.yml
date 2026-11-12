@@ -1,0 +1,300 @@
+name: finflock-trading-system
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+services:
+  # ============================================================================
+  # Relational Database: PostgreSQL 16
+  # ============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: finflock-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-trading_engine_db}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${LOCAL_DB_PASSWORD:-H95M5GblRGJleTumK0lYWg2QWB0W}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-trading_engine_db}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # ============================================================================
+  # In-Memory Cache & Message Broker: Redis 7
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: finflock-redis
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_local_pw_123}
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # ============================================================================
+  # Distributed Streaming Bus: Apache Kafka 3.9 (KRaft mode)
+  # ============================================================================
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: finflock-kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  # ============================================================================
+  # Stream Processing: Apache Flink 1.20 JobManager
+  # ============================================================================
+  flink-jobmanager:
+    image: flink:1.20.1-scala_2.12-java17
+    container_name: finflock-flink-jobmanager
+    platform: linux/amd64
+    command: jobmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        parallelism.default: 1
+        execution.checkpointing.interval: 10s
+        jobmanager.memory.process.size: 1024m
+    ports:
+      - "18081:8081"
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/overview >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # ============================================================================
+  # Stream Processing: Apache Flink 1.20 TaskManager
+  # ============================================================================
+  flink-taskmanager:
+    image: flink:1.20.1-scala_2.12-java17
+    container_name: finflock-flink-taskmanager
+    platform: linux/amd64
+    command: taskmanager
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        taskmanager.memory.jvm-metaspace.size: 384m
+        taskmanager.memory.process.size: 3072m
+        taskmanager.memory.task.off-heap.size: 256m
+        taskmanager.memory.framework.off-heap.size: 256m
+        parallelism.default: 1
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      flink-jobmanager:
+        condition: service_healthy
+
+  # ============================================================================
+  # Broker Interface: Interactive Brokers Gateway Container
+  # ============================================================================
+  paper-ibkr-gateway:
+    image: ${OPTIONS_GATEWAY_IMAGE:-docker.io/rachitm4555/trading-engine-ib-gateway:options-20260928.1}
+    container_name: finflock-ibkr-gateway
+    platform: linux/amd64
+    environment:
+      DJANGO_SECRET_KEY: ${LOCAL_DJANGO_SECRET:-django-insecure-secret-key-for-local-development-32chars}
+      GATEWAY_SERVICE_TOKEN: ${LOCAL_GATEWAY_TOKEN:-local-gateway-token-secret-32chars-min}
+      NOVNC_PASSWORD: ${LOCAL_NOVNC_PASSWORD:-novnc_local_pass}
+      ALLOWED_HOSTS: "*"
+      BROKER_ADAPTER: ${BROKER_ADAPTER:-ib_async}
+      IBC_TRADING_MODE: ${IBC_TRADING_MODE:-paper}
+      IB_USERNAME: ${IB_USERNAME:-edemo}
+      IB_PASSWORD: ${IB_PASSWORD:-demouser}
+      IBKR_CLIENT_ID: 91
+      GATEWAY_EVENT_RETENTION_DAYS: 1
+      GATEWAY_HEALTH_RETENTION_DAYS: 1
+      GATEWAY_COMPACTION_SECONDS: 300
+      GATEWAY_COMPACTION_BATCH_SIZE: 20000
+      GATEWAY_REMOTE_DESKTOP_ENABLED: "false"
+    ports:
+      - "18082:8080"
+    volumes:
+      - gateway_data:/data
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # ============================================================================
+  # Trading Core & Celery Workers: Backend Engine
+  # ============================================================================
+  backend:
+    build:
+      context: ./finflocksystems-trading-engine-backend/finflocksystems-trading-engine-338a2c5b3f2a
+      dockerfile: Dockerfile
+    image: finflock-trading-engine:options-local
+    container_name: finflock-backend
+    platform: linux/amd64
+    environment:
+      DJANGO_SECRET_KEY: ${LOCAL_DJANGO_SECRET:-django-insecure-secret-key-for-local-development-32chars}
+      ALLOWED_HOSTS: "*"
+      APP_BASE_PATH: ""
+      DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${LOCAL_DB_PASSWORD:-H95M5GblRGJleTumK0lYWg2QWB0W}@postgres:5432/${POSTGRES_DB:-trading_engine_db}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-trading_engine_db}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${LOCAL_DB_PASSWORD:-H95M5GblRGJleTumK0lYWg2QWB0W}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_local_pw_123}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_ENABLED: "true"
+      KAFKA_TOPIC_PARTITIONS: 1
+      FLINK_REST_URL: http://flink-jobmanager:8081
+      FLINK_JOB_START_TIMEOUT_SECONDS: 120
+      CLEANUP_DATABASE_ON_START: "false"
+      ALLOW_LIVE_TRADING: "false"
+      OPTION_CHAIN_PROVIDER: IBKR
+      OPTION_PRETRADE_RISK_ENABLED: "false"
+      LOCAL_PAPER_GATEWAY_URL: http://paper-ibkr-gateway:8080/api/v1
+      LOCAL_PAPER_GATEWAY_SERVICE_TOKEN: ${LOCAL_GATEWAY_TOKEN:-local-gateway-token-secret-32chars-min}
+      LOCAL_PAPER_GATEWAY_NOVNC_PASSWORD: ${LOCAL_NOVNC_PASSWORD:-novnc_local_pass}
+      BROKER_SESSION_ENCRYPTION_KEY: ${LOCAL_ENCRYPTION_KEY:-8rAsGODCypce6xNBeQMmXi5BInJMuU8PTnhdGDIIsc8=}
+      INTELLIGENCE_ENABLED: "true"
+      INTELLIGENCE_LLM_PROVIDER: ${INTELLIGENCE_LLM_PROVIDER:-fake}
+      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000,http://localhost:18000"
+    ports:
+      - "18000:8000"
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      flink-jobmanager:
+        condition: service_healthy
+      flink-taskmanager:
+        condition: service_started
+      paper-ibkr-gateway:
+        condition: service_healthy
+
+  # ============================================================================
+  # Web Terminal Interface: Frontend (React / Nginx)
+  # ============================================================================
+  frontend:
+    build:
+      context: ./finflocksystems-trading-engine-frontend/finflocksystems-trading-engine-14a4bbba0c19
+      dockerfile: Dockerfile
+      args:
+        VITE_APP_BASE_PATH: /
+    image: finflock-trading-frontend:local
+    container_name: finflock-frontend
+    environment:
+      PORT: 8000
+      BACKEND_API_URL: http://localhost:18000/api/v1
+    ports:
+      - "5173:8000"
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - backend
+
+  # ============================================================================
+  # Optional: All-in-One Unified Application Container (Frontend + Backend)
+  # Usage: docker compose --profile unified up -d app-unified
+  # ============================================================================
+  app-unified:
+    profiles: ["unified"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_APP_BASE_PATH: /
+    image: finflock-trading-engine-complete:latest
+    container_name: finflock-app-unified
+    environment:
+      DJANGO_SECRET_KEY: ${LOCAL_DJANGO_SECRET:-django-insecure-secret-key-for-local-development-32chars}
+      ALLOWED_HOSTS: "*"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${LOCAL_DB_PASSWORD:-H95M5GblRGJleTumK0lYWg2QWB0W}@postgres:5432/${POSTGRES_DB:-trading_engine_db}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-trading_engine_db}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${LOCAL_DB_PASSWORD:-H95M5GblRGJleTumK0lYWg2QWB0W}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_local_pw_123}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_ENABLED: "true"
+      FLINK_REST_URL: http://flink-jobmanager:8081
+      CLEANUP_DATABASE_ON_START: "false"
+      ALLOW_LIVE_TRADING: "false"
+      LOCAL_PAPER_GATEWAY_URL: http://paper-ibkr-gateway:8080/api/v1
+      LOCAL_PAPER_GATEWAY_SERVICE_TOKEN: ${LOCAL_GATEWAY_TOKEN:-local-gateway-token-secret-32chars-min}
+      LOCAL_PAPER_GATEWAY_NOVNC_PASSWORD: ${LOCAL_NOVNC_PASSWORD:-novnc_local_pass}
+      BROKER_SESSION_ENCRYPTION_KEY: ${LOCAL_ENCRYPTION_KEY:-8rAsGODCypce6xNBeQMmXi5BInJMuU8PTnhdGDIIsc8=}
+      INTELLIGENCE_ENABLED: "true"
+      INTELLIGENCE_LLM_PROVIDER: ${INTELLIGENCE_LLM_PROVIDER:-fake}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      flink-jobmanager:
+        condition: service_healthy
+      paper-ibkr-gateway:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  gateway_data:
+

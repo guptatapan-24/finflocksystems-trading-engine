@@ -1,0 +1,244 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1500" viewBox="0 0 2400 1500">
+  <defs>
+    <style>
+      .title { font: 700 42px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #10233f; }
+      .subtitle { font: 22px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #53657d; }
+      .section { font: 700 27px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1d3557; }
+      .entity { font: 700 21px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #ffffff; }
+      .table { font: 16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #dce9ff; }
+      .table-small { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #dce9ff; }
+      .field { font: 17px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #24364b; }
+      .small { font: 17px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #53657d; }
+      .note { font: 19px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334a67; }
+      .box { fill: #ffffff; stroke: #9bb0c9; stroke-width: 2; rx: 14; }
+      .head-audit { fill: #3568a8; }
+      .head-domain { fill: #26735f; }
+      .head-stream { fill: #7956a8; }
+      .cluster { fill: #f7faff; stroke: #c9d7e8; stroke-width: 2; rx: 22; }
+      .cluster-stream { fill: #fbf8ff; stroke: #d8cbea; stroke-width: 2; rx: 22; }
+      .cluster-domain { fill: #f6fbf9; stroke: #c3ded5; stroke-width: 2; rx: 22; }
+      .arrow { fill: none; stroke: #405a78; stroke-width: 3; marker-end: url(#arrow); }
+      .dash { fill: none; stroke: #8063a6; stroke-width: 3; stroke-dasharray: 10 8; marker-end: url(#arrow-purple); }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#405a78"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#8063a6"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#607087" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="2400" height="1500" fill="#eef3f9"/>
+  <text x="70" y="66" class="title">Operational Events and History — ER Diagram</text>
+  <text x="70" y="104" class="subtitle">PostgreSQL persistence, domain history, Kafka event flow, and runtime logging</text>
+  <line x1="1535" y1="67" x2="1600" y2="67" class="arrow"/>
+  <text x="1615" y="73" class="small">Database FK</text>
+  <line x1="1810" y1="67" x2="1875" y2="67" class="dash"/>
+  <text x="1890" y="73" class="small">Logical reference / event flow</text>
+
+  <!-- Audit cluster -->
+  <rect x="50" y="145" width="520" height="1115" class="cluster"/>
+  <text x="80" y="190" class="section">AUDIT AND OPERATIONS</text>
+
+  <g filter="url(#shadow)">
+    <rect x="90" y="225" width="440" height="310" class="box"/>
+    <path d="M104 225 H516 Q530 225 530 239 V305 H90 V239 Q90 225 104 225Z" class="head-audit"/>
+    <text x="115" y="260" class="entity">AUDIT_EVENT</text>
+    <text x="115" y="287" class="table">audit_auditevent</text>
+    <text x="115" y="339" class="field">PK  id</text>
+    <text x="115" y="368" class="field">    event_type</text>
+    <text x="115" y="397" class="field">    actor</text>
+    <text x="115" y="426" class="field">    aggregate_type + aggregate_id</text>
+    <text x="115" y="455" class="field">    data JSONB</text>
+    <text x="115" y="484" class="field">UK  idempotency_key</text>
+    <text x="115" y="513" class="field">    created_at</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="90" y="610" width="440" height="300" class="box"/>
+    <path d="M104 610 H516 Q530 610 530 624 V690 H90 V624 Q90 610 104 610Z" class="head-audit"/>
+    <text x="115" y="645" class="entity">OPERATION_ATTEMPT</text>
+    <text x="115" y="672" class="table">audit_operationattempt</text>
+    <text x="115" y="724" class="field">PK  id</text>
+    <text x="115" y="753" class="field">    operation_type + operation_id</text>
+    <text x="115" y="782" class="field">    attempt_number + request_hash</text>
+    <text x="115" y="811" class="field">    status + retryable</text>
+    <text x="115" y="840" class="field">    error + result JSONB</text>
+    <text x="115" y="869" class="field">    started_at + completed_at</text>
+  </g>
+
+  <rect x="90" y="980" width="440" height="210" rx="14" fill="#e9f1fb" stroke="#9bb0c9" stroke-width="2"/>
+  <text x="115" y="1020" class="section">Logical references</text>
+  <text x="115" y="1060" class="note">aggregate_type + aggregate_id</text>
+  <text x="115" y="1090" class="small">identifies an order, strategy, portfolio,</text>
+  <text x="115" y="1117" class="small">account, or another business object.</text>
+  <text x="115" y="1157" class="note">operation_type + operation_id</text>
+  <text x="115" y="1184" class="small">identifies a retryable workflow operation.</text>
+
+  <!-- Domain cluster -->
+  <rect x="610" y="145" width="970" height="1115" class="cluster-domain"/>
+  <text x="640" y="190" class="section">DOMAIN EXECUTION HISTORY</text>
+
+  <g filter="url(#shadow)">
+    <rect x="650" y="225" width="400" height="285" class="box"/>
+    <path d="M664 225 H1036 Q1050 225 1050 239 V305 H650 V239 Q650 225 664 225Z" class="head-domain"/>
+    <text x="675" y="260" class="entity">ORDER_INTENT</text>
+    <text x="675" y="287" class="table">oms_orderintent</text>
+    <text x="675" y="339" class="field">PK  id</text>
+    <text x="675" y="368" class="field">FK  portfolio / strategy / instrument</text>
+    <text x="675" y="397" class="field">    origin + source + mode</text>
+    <text x="675" y="426" class="field">    operation_status + error</text>
+    <text x="675" y="455" class="field">    retryable + attempt_count</text>
+    <text x="675" y="484" class="field">UK  idempotency_key</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1135" y="225" width="400" height="285" class="box"/>
+    <path d="M1149 225 H1521 Q1535 225 1535 239 V305 H1135 V239 Q1135 225 1149 225Z" class="head-domain"/>
+    <text x="1160" y="260" class="entity">ORDER</text>
+    <text x="1160" y="287" class="table">oms_order</text>
+    <text x="1160" y="339" class="field">PK  id</text>
+    <text x="1160" y="368" class="field">FK  intent_id (unique)</text>
+    <text x="1160" y="397" class="field">UK  internal_id</text>
+    <text x="1160" y="426" class="field">    broker_order_id</text>
+    <text x="1160" y="455" class="field">    status + quantities</text>
+    <text x="1160" y="484" class="field">    created_at + updated_at</text>
+  </g>
+
+  <path d="M1050 367 H1135" class="arrow"/>
+  <text x="1065" y="350" class="small">1 → 0..1</text>
+
+  <g filter="url(#shadow)">
+    <rect x="1135" y="560" width="400" height="290" class="box"/>
+    <path d="M1149 560 H1521 Q1535 560 1535 574 V640 H1135 V574 Q1135 560 1149 560Z" class="head-domain"/>
+    <text x="1160" y="595" class="entity">ORDER_STATUS_HISTORY</text>
+    <text x="1160" y="622" class="table">oms_orderstatushistory</text>
+    <text x="1160" y="674" class="field">PK  id</text>
+    <text x="1160" y="703" class="field">FK  order_id</text>
+    <text x="1160" y="732" class="field">    from_status → to_status</text>
+    <text x="1160" y="761" class="field">    source + reason + details JSONB</text>
+    <text x="1160" y="790" class="field">UK  event_key</text>
+    <text x="1160" y="819" class="field">    occurred_at + created_at</text>
+  </g>
+  <path d="M1335 510 V560" class="arrow"/>
+  <text x="1350" y="543" class="small">1 → many</text>
+
+  <g filter="url(#shadow)">
+    <rect x="650" y="560" width="400" height="290" class="box"/>
+    <path d="M664 560 H1036 Q1050 560 1050 574 V640 H650 V574 Q650 560 664 560Z" class="head-domain"/>
+    <text x="675" y="595" class="entity">STRATEGY_INSTANCE</text>
+    <text x="675" y="622" class="table">strategies_strategyinstance</text>
+    <text x="675" y="674" class="field">PK  id</text>
+    <text x="675" y="703" class="field">FK  definition / portfolio / instrument</text>
+    <text x="675" y="732" class="field">    state + enabled</text>
+    <text x="675" y="761" class="field">    version</text>
+    <text x="675" y="790" class="field">    runtime lifecycle timestamps</text>
+    <text x="675" y="819" class="field">    workflow_trace_id</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="650" y="900" width="400" height="300" class="box"/>
+    <path d="M664 900 H1036 Q1050 900 1050 914 V980 H650 V914 Q650 900 664 900Z" class="head-domain"/>
+    <text x="675" y="935" class="entity">STRATEGY_RUN</text>
+    <text x="675" y="962" class="table">strategies_strategyrun</text>
+    <text x="675" y="1014" class="field">PK  id</text>
+    <text x="675" y="1043" class="field">FK  strategy_instance + version</text>
+    <text x="675" y="1072" class="field">    input_hash + triggering_event_id</text>
+    <text x="675" y="1101" class="field">    snapshots JSONB</text>
+    <text x="675" y="1130" class="field">    status + error</text>
+    <text x="675" y="1159" class="field">    started_at + completed_at</text>
+  </g>
+  <path d="M850 850 V900" class="arrow"/>
+  <text x="865" y="883" class="small">1 → many</text>
+
+  <g filter="url(#shadow)">
+    <rect x="1135" y="900" width="190" height="300" class="box"/>
+    <path d="M1149 900 H1311 Q1325 900 1325 914 V980 H1135 V914 Q1135 900 1149 900Z" class="head-domain"/>
+    <text x="1155" y="935" class="entity">SIGNAL</text>
+    <text x="1155" y="963" class="table-small">strategies_strategysignal</text>
+    <text x="1155" y="1025" class="field">PK id</text>
+    <text x="1155" y="1054" class="field">FK run_id UK</text>
+    <text x="1155" y="1083" class="field">signal_type</text>
+    <text x="1155" y="1112" class="field">signal_time</text>
+    <text x="1155" y="1141" class="field">details JSONB</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1345" y="900" width="190" height="300" class="box"/>
+    <path d="M1359 900 H1521 Q1535 900 1535 914 V980 H1345 V914 Q1345 900 1359 900Z" class="head-domain"/>
+    <text x="1365" y="935" class="entity">TARGET</text>
+    <text x="1365" y="963" class="table-small">strategies_strategytarget</text>
+    <text x="1365" y="1025" class="field">PK id</text>
+    <text x="1365" y="1054" class="field">FK run_id</text>
+    <text x="1365" y="1083" class="field">instrument_id</text>
+    <text x="1365" y="1112" class="field">target values</text>
+    <text x="1365" y="1141" class="field">status + mode</text>
+  </g>
+  <path d="M1050 1045 H1135" class="arrow"/>
+  <path d="M850 1200 V1230 H1440 V1200" class="arrow"/>
+  <text x="1065" y="1028" class="small">0..1</text>
+  <text x="1110" y="1252" class="small">1 → many targets</text>
+
+  <!-- Streaming cluster -->
+  <rect x="1620" y="145" width="730" height="1115" class="cluster-stream"/>
+  <text x="1650" y="190" class="section">EVENT STREAMING</text>
+
+  <g filter="url(#shadow)">
+    <rect x="1660" y="225" width="650" height="390" class="box"/>
+    <path d="M1674 225 H2296 Q2310 225 2310 239 V305 H1660 V239 Q1660 225 1674 225Z" class="head-stream"/>
+    <text x="1685" y="260" class="entity">OUTBOX_EVENT</text>
+    <text x="1685" y="287" class="table">audit_outboxevent</text>
+    <text x="1685" y="339" class="field">PK  id          UK event_id</text>
+    <text x="1685" y="368" class="field">    topic + partition_key + event_type</text>
+    <text x="1685" y="397" class="field">    aggregate_type + aggregate_id</text>
+    <text x="1685" y="426" class="field">    payload JSONB</text>
+    <text x="1685" y="455" class="field">    correlation_id + causation_id</text>
+    <text x="1685" y="484" class="field">UK  idempotency_key</text>
+    <text x="1685" y="513" class="field">    status + attempt_count + last_error</text>
+    <text x="1685" y="542" class="field">    available / published / created timestamps</text>
+    <text x="1685" y="580" class="small">Published rows retained for 30 days by default.</text>
+  </g>
+
+  <rect x="1765" y="680" width="440" height="125" rx="62" fill="#e9def7" stroke="#9a7bbb" stroke-width="3"/>
+  <text x="1850" y="730" class="section">KAFKA TOPICS</text>
+  <text x="1810" y="767" class="small">orders • executions • strategy • risk • reconciliation</text>
+  <path d="M1985 615 V680" class="dash"/>
+
+  <g filter="url(#shadow)">
+    <rect x="1660" y="880" width="305" height="300" class="box"/>
+    <path d="M1674 880 H1951 Q1965 880 1965 894 V960 H1660 V894 Q1660 880 1674 880Z" class="head-stream"/>
+    <text x="1685" y="915" class="entity">CONSUMED_EVENT</text>
+    <text x="1685" y="942" class="table">event_bus_consumedevent</text>
+    <text x="1685" y="994" class="field">PK  id</text>
+    <text x="1685" y="1023" class="field">    consumer_name</text>
+    <text x="1685" y="1052" class="field">    event_id</text>
+    <text x="1685" y="1081" class="field">    result JSONB</text>
+    <text x="1685" y="1110" class="field">    processed_at</text>
+    <text x="1685" y="1150" class="small">Successful consumer processing</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="2005" y="880" width="305" height="300" class="box"/>
+    <path d="M2019 880 H2296 Q2310 880 2310 894 V960 H2005 V894 Q2005 880 2019 880Z" class="head-stream"/>
+    <text x="2030" y="915" class="entity">DEAD_LETTER_EVENT</text>
+    <text x="2030" y="942" class="table">event_bus_deadletterevent</text>
+    <text x="2030" y="994" class="field">PK  id</text>
+    <text x="2030" y="1023" class="field">    event_id + source_topic</text>
+    <text x="2030" y="1052" class="field">    consumer_name + reason</text>
+    <text x="2030" y="1081" class="field">    envelope JSONB</text>
+    <text x="2030" y="1110" class="field">    replayed_at + created_at</text>
+    <text x="2030" y="1150" class="small">Failed consumer processing</text>
+  </g>
+  <path d="M1900 805 V840 H1812 V880" class="dash"/>
+  <path d="M2070 805 V840 H2157 V880" class="dash"/>
+
+  <!-- Runtime logging footer -->
+  <rect x="50" y="1300" width="2300" height="145" rx="20" fill="#172a43"/>
+  <text x="85" y="1350" class="entity">RUNTIME APPLICATION LOGS — NOT RELATIONAL DATA</text>
+  <text x="85" y="1390" style="font: 20px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill:#dbe8f7;">Django · Gunicorn · Celery · Flink · Broker Gateway</text>
+  <text x="830" y="1390" style="font: 20px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill:#dbe8f7;">→ stdout / stderr → container-platform logging</text>
+  <text x="85" y="1423" style="font: 17px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill:#9fb6d1;">The /audit/ API exposes only AUDIT_EVENT. Startup with CLEANUP_DATABASE_ON_START=true flushes PostgreSQL rows and required Kafka topics.</text>
+</svg>

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["metadata", "data_contract", "simulation", "validation", "metrics", "strategy_stock_pair_scoring", "risk_timeframe_buckets", "research_pipeline", "compute_architecture"],
+  "properties": {
+    "metadata": {"type": "object", "required": ["id", "snapshot_date"]},
+    "data_contract": {"type": "object"}, "simulation": {"type": "object"},
+    "validation": {"type": "object"}, "metrics": {"type": "array"},
+    "strategy_stock_pair_scoring": {"type": "object"}, "risk_timeframe_buckets": {"type": "object"},
+    "research_pipeline": {"type": "array"}, "compute_architecture": {"type": "object"}
+  }
+}

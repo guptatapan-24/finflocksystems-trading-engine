@@ -1,0 +1,174 @@
+{
+  "metadata": {
+    "snapshot_date": "2026-07-15",
+    "purpose": "rule-based pruning before expensive backtests"
+  },
+  "global_rules": [
+    {
+      "id": "G01",
+      "rule": "no equity strategy for NOW goals"
+    },
+    {
+      "id": "G02",
+      "rule": "intraday strategies require intraday bars, spread estimates, exact timestamps and high liquidity"
+    },
+    {
+      "id": "G03",
+      "rule": "fundamental strategies require point-in-time statements and publication dates"
+    },
+    {
+      "id": "G04",
+      "rule": "peer/stat-arb strategies require at least five contemporaneous industry peers and point-in-time GICS"
+    },
+    {
+      "id": "G05",
+      "rule": "event strategies are blocked when announcement timestamp is ambiguous"
+    },
+    {
+      "id": "G06",
+      "rule": "all final Portfolio Builder strategies must have a long-only implementation and non-zero target weight"
+    },
+    {
+      "id": "G07",
+      "rule": "stock must pass dynamic price, volume, history and tradability filters on the decision date"
+    }
+  ],
+  "gics_overrides": [
+    {
+      "match": {
+        "sub_industry": "Biotechnology"
+      },
+      "prefer": [
+        "momentum",
+        "trend",
+        "event",
+        "volatility_control"
+      ],
+      "restrict": [
+        "income unless dividend history exists",
+        "fundamental valuation when earnings are non-meaningful"
+      ],
+      "extra_controls": [
+        "earnings_and_trial_event_blackouts",
+        "gap_risk_cap"
+      ]
+    },
+    {
+      "match": {
+        "sector": "Utilities"
+      },
+      "prefer": [
+        "income",
+        "low_volatility",
+        "trend",
+        "allocation"
+      ],
+      "restrict": [
+        "high_turnover mean reversion unless liquidity passes"
+      ],
+      "extra_controls": [
+        "rate_sensitivity_stress"
+      ]
+    },
+    {
+      "match": {
+        "sector": "Real Estate"
+      },
+      "prefer": [
+        "income",
+        "value",
+        "trend",
+        "allocation"
+      ],
+      "restrict": [
+        "generic book-to-market without REIT adjustments"
+      ],
+      "extra_controls": [
+        "rate_sensitivity_stress",
+        "FFO_and_NAV_features"
+      ]
+    },
+    {
+      "match": {
+        "sector": "Financials"
+      },
+      "prefer": [
+        "value",
+        "quality",
+        "momentum",
+        "trend"
+      ],
+      "restrict": [
+        "generic enterprise-value features for banks and insurers"
+      ],
+      "extra_controls": [
+        "financial-sector-specific fundamentals"
+      ]
+    },
+    {
+      "match": {
+        "sub_industry": "Semiconductors"
+      },
+      "prefer": [
+        "momentum",
+        "trend",
+        "cycle_relative",
+        "event"
+      ],
+      "restrict": [
+        "low-risk buckets unless dynamic volatility passes"
+      ],
+      "extra_controls": [
+        "cycle_and_gap_stress"
+      ]
+    },
+    {
+      "match": {
+        "sub_industry": "Passenger Airlines"
+      },
+      "prefer": [
+        "trend",
+        "momentum",
+        "event"
+      ],
+      "restrict": [
+        "HURRY and risk level 1"
+      ],
+      "extra_controls": [
+        "fuel_and_gap_stress"
+      ]
+    },
+    {
+      "match": {
+        "sector": "Consumer Staples"
+      },
+      "prefer": [
+        "income",
+        "quality",
+        "low_volatility",
+        "trend"
+      ],
+      "restrict": [],
+      "extra_controls": [
+        "valuation_crowding_check"
+      ]
+    },
+    {
+      "match": {
+        "sector": "Energy"
+      },
+      "prefer": [
+        "trend",
+        "momentum",
+        "value",
+        "cycle_relative"
+      ],
+      "restrict": [
+        "risk level 1 unless volatility and drawdown screens pass"
+      ],
+      "extra_controls": [
+        "commodity_beta_stress"
+      ]
+    }
+  ]
+}

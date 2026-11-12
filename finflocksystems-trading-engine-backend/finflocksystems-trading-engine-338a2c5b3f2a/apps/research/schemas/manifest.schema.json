@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["bundle_name", "generated_on", "files", "counts"],
+  "properties": {
+    "bundle_name": {"type": "string", "minLength": 1},
+    "generated_on": {"type": "string", "format": "date"},
+    "files": {
+      "type": "array", "minItems": 5,
+      "items": {
+        "type": "object", "required": ["name", "bytes", "sha256"],
+        "properties": {
+          "name": {"type": "string"}, "bytes": {"type": "integer", "minimum": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "counts": {
+      "type": "object", "required": ["stocks", "strategies", "full_gics_taxonomy_sub_industries"],
+      "properties": {
+        "stocks": {"const": 500}, "strategies": {"const": 97},
+        "full_gics_taxonomy_sub_industries": {"const": 163}
+      }
+    }
+  }
+}

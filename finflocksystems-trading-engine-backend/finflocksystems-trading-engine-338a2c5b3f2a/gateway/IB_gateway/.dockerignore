@@ -1,0 +1,39 @@
+.git
+.gitignore
+.dockerignore
+.env
+.env.*
+**/.env
+**/.env.*
+*.sqlite3
+*.sqlite3-*
+**/*.sqlite3
+**/*.sqlite3-*
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+tests
+conftest.py
+config/test_settings.py
+.vnc
+**/.vnc
+ibc
+**/ibc/config.ini
+Jts
+README.md
+pytest.ini
+
+# Finder-style duplicates ("supervisord 2.conf", "0006_..._constraint 3.py").
+# ~90 of them were reaching the image. They are not merely dead weight: most
+# are mode 0600 while the container runs as `ibgateway`, and Django's migration
+# loader imports every .py in a migrations package, so the image failed at
+# startup with
+#   PermissionError: '/app/gateway_service/migrations/0003_..._and_more 2.py'
+# A readable one is worse -- a duplicated migration is a second graph node
+# claiming the same migration name.
+#
+# Every file these patterns exclude was verified to have its original present.
+**/* [0-9].*
+**/* [0-9]
